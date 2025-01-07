@@ -1,0 +1,6 @@
+MOVE = (ahead -> AHEAD),
+AHEAD = (left -> STOP | right -> MOVE).
+// * ahead -> left
+// * ahead -> right -> ahead -> left
+// * ahead -> right -> ahaed -> right -> ahead -> left
+// * ahead -> right -> ahead -> right ->

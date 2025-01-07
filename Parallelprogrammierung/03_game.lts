@@ -1,0 +1,13 @@
+GAME = (one -> WIN
+	   |two -> WIN
+	   |three -> LOSE),
+WIN = (win -> GAME),
+LOSE = (lose -> GAME).
+
+// * one -> win -> one
+// * one -> win -> two
+// * one -> win -> three -> lose -> one
+// * two -> win -> three -> lose -> two
+// * three -> lose -> one -> win -> three
+// * one -> win -> one -> win -> one
+// * three -> lose -> three -> lose -> three
