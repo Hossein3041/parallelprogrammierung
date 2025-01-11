@@ -2,10 +2,11 @@
 - diese veranstaltung mache ich im moment gerade im semester (stand: 07.01.2025)
 - in dieser veranstaltung geht es darum, zu lernen, nebenläufig zu programmieren
 - programmiersprache ist java
-- vorlesungspdf (bis jetzt) ist in parallelprogrammierung -> Vorlesungsfolien.pdf
-- ubeungspdf (bis jetzt) ist in parallelprogrammierung -> bungsaufgaben.pdf
-- pdf für das erste assignment ist in parallelprogrammierung -> Assignments.pdf
+- vorlesungspdf (bis jetzt) ist in -> Vorlesungsfolien.pdf
+- ubeungspdf (bis jetzt) ist in -> uebungsaufgaben.pdf
+- pdf für das erste assignment ist in -> Assignments.pdf
 - das zweite assignment bekommen wir ca. in zwei wochen.
-- loesungen zu den uebungen sind in parallelprogrammierung -> src.zip -> src -> ueb
-- vorlesungscode aus vorlesung sind in parallelprogrammierung -> src.zip -> src- > vl
-- alles restliche in parallelprogrammierung (alles mit .lts) sind zustandsdiagramme und fsp-beschreibungen. Dafuer braucht man LTSA Analyser
+- loesungen zu den uebungen sind in ueb
+- vorlesungscode ist in vl
+- loesung zum ersten assignment ist in aufgabe_1_2 und aufgabe_1_3
+- alles restliche ist in verzeichnis parallelprogrammierung. (alles mit .lts) sind zustandsdiagramme und fsp-beschreibungen. Dafuer braucht man LTSA Analyser
