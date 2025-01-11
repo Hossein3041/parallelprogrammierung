@@ -1,0 +1,2853 @@
+1 Einführung
+- Natürliche Systeme: Parallelverarbeitung selbstverständlich - problemlos
+- Komplexe Programmsysteme: ständig Probleme mit "parallerer Denkweise"
+- Beispiel: Bestrahlungsgeräte, Mars Pathfinder
+- Problemursache: Komplexität unterschätzt, Programmiersprache ungeeignet
+- Grund: Meisten Programmiersprachen und Ausbildungen => ausgerichtet auf seq. progr.
+- Bedeutung: Morderne Rechner haben mehrere Prozesskerne, deshalb Parallelverarbeitung ist Normalzustand
+- Ziel der Vorlesung:
+    -> Parallele Abläufe modellieren und in Java umsetzen
+    -> Umgang mit einfachen parallelen Algorithmen
+    -> Bewusstsein für Fehlerquellen und Lösungswege
+
+1.1 Begriffe und Motivation der Parallelverarbeitung
+    Sequenziell => Anweisungen werden "nacheinander" sequentiell, deterministisch, in festgelegter Reihenfolge
+    Parallel    => Anweisungen werden "gleichzeitig" parallel, auf verschiedenen Prozessoren ausgeführt.
+    Nebenläufig (concurrent) => Anweisungen gleichzeitig oder in beliebiger Reihenfolge ausführen,
+                auf einem oder mehreren Prozessoren
+                -> Nebenläufig ist der allgemeinere Begriff im Vergleich zu parallel
+    Prozess: Eine Folge atomarer (nicht teilbarer) Aktionen
+    Prozessor: Eine Funktionseinheit, die Prozesse ausführt
+
+Warum Parallelverarbeitung?
+- Vier Hauptgründe für Einsatz von Parallelverarbeitung:
+  1. Beschleunigung einer Problemlösung:
+     -> Reduziert "Zeit pro Aufgabe", wenn Aufgabe gleichmäßig aufteilbar
+     -> Dieser Zeitgewinn: Unabhängig von Technologie und physikalischen Grenzen der Einzelprozessoren
+     -> Beispiel: Schnellere Wettervorhersage
+
+  2. Erhöhung des Durchsatzes:
+     -> Mehr Aufgaben pro Zeiteinheit erledigen, größere Probleme in gleicher Zeit lösen
+     -> Beispiel: Genauere Wettervorhersagemodelle
+
+  3. Natürlichere Beschreibung von Lösungen:
+     -> Viele Probleme besitzen inhärente Parallelität,
+        die mit einem parallelen Ansatz einfacher darstellbar ist.
+     -> Beispiel: Grafische Oberflächen, biologische Modelle (neuronale Netze).
+
+  4. Fehlertoleranz:
+     -> Durch parallele Ausführung auf verschied. Systemen können Fehler erkannt werden
+        (z.B. durch Voting)
+     -> Beispiel: Reaktorsteuerung, Raumfahrt (Redundanz im Space Shuttle)
+
+Exkurs "Parallele Algorithmen"
+- Erklärung der Bewertung paralleler Algorithmen anhand von zwei Größen/Kennzahlen:
+  1. Beschleunigung (Speedup):
+  - Gibt an, wie viel schneller ein Problem durch Einsatz mehrerer Prozessoren gelöst wird
+  - Formel:
+    => Sei n die Problemgröße
+    => p die Anzahl verwendeter Prozessoren, und
+    => tn(p) die Ausführungszeit beim Einsatz von p Prozessoren
+    Dann ist => sn(p) := tn(1) / tn(p)
+    die erreichbare Beschleunigung mit dem parallelen Algorithmus
+    (Vergleich der Laufzeit mit einem Prozessor tn(1) versus mehreren Prozessoren tn(p))
+
+  2. Effizienz:
+  Anhand Beschleunigung sn(p) und dafür notwendigen Anzahl Prozessoren p wird die Effizienz definiert:
+  en(p) := sn(p) / p
+  Effizienz misst, wie gut Prozessoren bei Parallelverarbeitung genutzt werden
+
+  Beschleunigungsbeispiele paralleler Algorithmen
+  - Gute Beschleunigung: Z.B. bei Matrizenmultiplikation (lineare Steigerung)
+  - Realistische Beschleunigung: Z.B. beim Sortieren, wo Beschleunigung mit mehr Prozessoren abflacht
+  - Superlineare Beschleunigung: Extrem hohe Beschleunigung, z.B. ebenfalls beim Sortieren
+
+  Ein paralleler Sortieralgorithmus (1)
+  Odd Even Sort:
+  - Gegeben sind n zu sortierende Zahlen und n Prozessoren. Jeder Prozessor speichert eine Zahl.
+  - Zwei Schritte werden nacheinander ausgeführt:
+
+  Ein paralleler Sortieralgorithmus (2)
+  1. Ungerader Schritt:
+  Prozessoren mit ungeradem Index Pi(1 <= u < n) vergleichen ihre Zahl mit der des nächsten Prozessors:
+  Falls zi > zi+1, tauschen Prozessoren ihre Zahl, sonst nicht.
+
+  2. Gerader Schritt:
+  Prozessoren mit geradem Index Pj(1 < j n) vergleichen ihre Zahl mit der des nächsten Prozessors:
+  Falls zj > zj+1, tauschen Prozessoren ihre Zahl, sonst nicht.
+
+  Der Algorithmus, also die beiden obigen Schritte, werden zum Sortieren,
+  abwechselnd n-mal durchgeführt.
+
+  Ein paralleler Sortieralgorithmus (3)
+  - Wie arbeitet der Algorithmus die Zahlenfolge ab?
+    {8, 3, 4, 6, 2, 1, 5, 7}
+    => Auf dem Papier gemacht
+
+  - Welche Struktur müssen Daten aufweisen, damit alle n-Schritte notwendig sind?
+    => Damit alle n-Schritte notwendig sind, müssen die Eingabedaten in absteigender Reihenfolge vorliegen
+    => {n, n-1, ..., 1}, da der Algorithmus in jedem Schritt schrittweise Vertauschungen vornehmen muss
+    => Jede Zahl kann nur schrittweise in die richtige Position.
+    Der Algorithmus ist gezwungen, in jedem Schritt, Vertauschungen vorzunehmen.
+    => Im schlechtesten Fall sind also genau n Schritte zur Sortierung notwendig.
+       - Marius: Ungerade Anzahl ist wichtig
+       - Gerade geht auch, bei absteigend sortiert
+
+  - Wie lässt sich Algorithmus unabhängig von Prozessoranzahl modifizieren?
+    1. Blöcke auf Prozessoren verteilen: Mehrere Zahlen auf einem Prozessor speichern, der dann den Odd Even Sort
+    auf seinem Block durchführt und nur Grenzwerte mit anderen Prozessoren tauscht.
+
+    Beispiel: Prozessor A hat {3, 5, 7}, Prozessor B {2, 6, 8}. Nach der internen Sortierung wird nur
+    die letzte Zahl von A(7) mit der ersten B(2) verglichen und ggf. vertauscht.
+
+    2. Serielle Verarbeitung (nur ein Prozessor): Der Algorithmus läuft sequenziell auf einem Prozessor,
+    wobei die Paare nacheinander verglichen und vertauscht werden, ähnlich wie beim Bubble Sort.
+
+    3. Multithreading: Ein Thread-Pool verwenden, um mehrere Threads auf Zahlenblöcke anzuwenden,
+    die dann in parallelen geraden/ungeraden Schritten sortiert werden.
+
+  Bemerkung: Es gibt auch bessere "effizientere",
+  sowie auch kompliziertere parallele Sortieralgorithmen als Odd Even Sort.
+
+  Zusammenfassung:
+  - Ein Prozess ist eine Folge atomarer Anweisungen
+  - Ausführung kann sequentiell, parallel oder nebenläufig sein
+  - Hauptziele der Parallelverarbeitung:
+    -> Beschleunigung,
+    -> Durchsatz-steigerung,
+    -> Fehlertoleranz und
+    -> bessere Problemlösung
+  - Odd Even Sort: Beispiel als ein einfaches paralleles Sortierverfahren
+
+  1.2 Parallelrechnertypen
+  - Welche Unterscheidungskriterien gibt es für Rechner?
+  - Welche Parallelrechner-Arten gibt es?
+  - Was sind deren Eigenschaften?
+  - Welche Art von Parallelrechner kann man für Java nutzen?
+
+Flynns Taxonomie - von Michael J. Flynn (1966)
+- Ist ein Klassifikationsschema für Computerarchitekturen,
+- beschreibt verschiedene Parallelverarbeitungssystemen
+- Dient dazu, Computerarchitekturen anhand von Art udn Weise zu kategorisieren,
+  wie sie Befehle und Datenströme verarbeiten:
+  Eine der grundlegendsten Einteilungen in Parallelprogrammierung
+
+- Taxonomie klassifiziert Architekturen basierend auf zwei Dimensionen - in vier Hauptkategorien:
+  1. Anzahl gleichzeitig ausgeführten Befehlsströmen (Instruction Streams)
+  2. Anzahl gleichzeitig verarbeiteten Datenströmen (Data Streams)
+
+  1. SISD (Single Instruction, Single Data)
+  - Anwendung von einzelne Anweisung auf ein Datenstrom
+  - Entspricht klassische sequentielle Verarbeitung (von-Neumann-Architektur, PCs mit einem Kern)
+  - Moderne Systeme mit Co-Prozessoren erfüllen nicht strikt diese Definition
+
+  2. SIMD (Single Instruction, Multiple Data)
+  - Anwendung von einzelne Anweisung auf mehrere Datenströme
+  - Typische Anwendung in Grafikprozessoren (GPUs) & spezialisierten Hochleistungsrechnern
+  - Beispiel: Nvidia RTX-4090 mit 16.384 CUDA-Kernen
+
+  3. MIMD (Multiple Instruction, Multiple Data)
+  - Anwendung von mehrere Anweisungen auf mehrere Datenströme
+  - Standard für moderne Multiprozessor-Architekturen wie PCs, Server oder Supercomputer
+  - Prozessoren können getrennte oder gemeinsame Speicher verwenden
+
+  4. MISD (Multiple Instruction, Single Data)
+  - Anwendung von mehrere Anweisungen auf einzelnes Datenstrom
+  - Selten benutzt, bedeutsam in fehlertoleranten Systemen zu mehrfachen Überprüfung der Daten
+  - In Literatur oft nicht detailliert behandelt
+
+Weitere Unterscheidung von MIMD-Rechnern
+- SMP (Symmetric Multiprocessing):
+  -> Mehrere gleichartige CPUs/Kerne greifen auf denselben Speicher zu
+  -> Vorteile: -> Einfaches Programmiermodell,
+               -> bei vielen Prozessoren jedoch aufwändiges Crossbar-Schaltung erforderlich
+
+- MPP (Massively Parallel Processing):
+  -> Mehrere separate CPUs mit eigenem Speicher
+  -> Kein Engpass durch gemeinsamen Speicher,
+  -> jedoch ein Verbindungsnetzwerk erforderlich
+
+Einteilung von Multiprozessoren:
+- Es gibt synchrone und asynchrone Multiprozessoren
+- synchron: --
+- asynchron: - starke Kopplung (SMP): Mehrere Prozessoren greifen auf denselben Speicher zu
+             - schwache Kopplung (MPP): Prozessoren haben jeweils eigenen Speicher und kommunizieren
+                                        - über Rendezvous-Verfahren
+                                        - über Nachrichtenaustausch
+
+Gegenstand dieser Vorlesung ist SMP-Modell
+(erst bei >= 2 Prozessoren: echte Parallelverarbeitung möglich,
+ bei 1 Prozessor, nur Multitasking)
+
+Zusammenfassung
+- Rechnerarchitekturen werden nach Flynn's Taxonomie unterschieden,
+- darunter wichtige Parallelrechnerarten: SIMD und MIMD
+- MIMD-Rechner unterteilt weiter in: MPP- und SMP
+- Multitasking auf einem Prozessor mit SMP-Ansatz ähnlich
+- Java Programmierung: SMP-Ansatz => Threads innerhalb von JVM nutzen denselben Speicherbereich
+________________________________________________________________________________________________
+2 Erste Programme
+- 1. Wie nebenläufige Prozesse in Java starten?
+- Einige Beispielprogramme diskutieren
+
+2.1 Starten von Prozessen in Java
+- "Prozess" stammt ursprünglich aus Umfeld von Betriebssystemen
+- Heavyweight Processes: Betriebssystem-Prozesse mit jeweils eigenem Daten- und Programmspeicher
+  (z.B. Programme, die auf einem Rechner ausgeführt werden)
+- Lightweight Processes (Threads): Prozesse innerhalb eines Betriebssystem-Prozesses,
+  teilen gemeinsam Daten und Speicher, haben aber eigene lokale Variablen
+  (z.B. Threads innerhalb einer Java Virtual Machine)
+
+JVM und Threads:
+- Jede Insatanz der JVM: ein einzelner Betriebsssytemprozess
+- Innerhalb einer JVM können beliebig viele Threads ausgeführt werden,
+  diese teilen sich gleiche Ressourcen (Speicher, Dateien, etc.)
+- Jedes Java-Programm startet mit main-Thread, diese startet weitere Threads
+- Java-Threads laufen idr als Betriebssystem-Threads entweder nebenläufig im Zeitscheibenverfahren,
+  oder echt parallel auf einem Prozessor oder Kern
+
+Starten von Threads
+- Threads sind Java-Objekte,
+
+  Thread-Erzeugung
+- werden direkt erzeugt, entweder
+
+  1. durch Thread-Erweiterung (Vererbung)
+  public class MyThread extends Thread {
+    @Override
+    public void run() { ... }
+  }
+
+  2. oder durch Interface-Implementierung Runnable
+  public class MyRun implements Runnable {
+    @Override
+    public void run() { ... }
+  }
+
+  Thread-Start
+- werden explizit gestartet durch
+
+  MyThread mythread = new MyThread();
+  // oder: mythread = new Thread(new MyRun());
+  mythread.start(); // intern wird run() aufgerufen
+  // aufrufender und neuer Thread laufen nebenläufig
+
+- werden implizit gestartet durch Thread.Builder (Java 21)
+
+  MyThread mythread = Thread.ofPlatform().start(new MyRun());
+  // aufrufender und neuer Thread laufen jetzt nebenläufig!
+
+- Zustand jedes Threads beeinflussen/abfragen durch
+  start(), sleep(), isAlive(), interrupt(), isInterrupted(), ...
+
+Beispiel zum direkten Starten von Threads
+- Hilfsklasse Utils:
+
+package vl;
+
+public class VL_02_Utils {
+    public static void main(String[] args){
+        doit(10);
+    }
+    public static void printThreadData(Integer n) {
+        Thread t = Thread.currentThread();
+        System.out.printf("instance of %s(%s): %s\n", t.getClass().getSimpleName(), n, t.toString());
+    }
+
+    public static void doit(int n) {
+        printThreadData(n);
+        try {
+            Thread.sleep(1000); // *who* is sleeping?
+        } catch (Exception e) {
+        }
+    }
+}
+
+- Implementierung von Runnable:
+
+ private final int n;
+    public VL_02_MyRunnable(int n){
+        this.n = n;
+    }
+
+    @Override
+    public void run(){
+        VL_02_Utils.doit(n);
+    }
+ }
+
+- Erzeugen von Threads aus MyRunnable und ausführen -->
+
+public static void main(String... args){
+        VL_02_Utils.printThreadData(null);
+
+        // create named threads from myRunnable
+        Thread myFirst = new Thread(new VL_02_MyRunnable(-1));
+        Thread mySecond = new Thread(new VL_02_MyRunnable(-2), "foo");
+        myFirst.start(); mySecond.start();
+
+        // await termination of both threads
+        try{ myFirst.join(); mySecond.join();
+
+        } catch(Exception e){}
+
+        // start some anonymous threads from MyRunnable
+        for(int n = 1; n <= 10; n+= 1){
+            (new Thread(new VL_02_MyRunnable(n))).start();
+        }
+        System.out.println("* * *");
+}
+
+- oder alternativ über Thread.Builder:
+
+public static void main(String... args){
+        VL_02_Utils.printThreadData(null);
+
+        // create named threads via Thread.Builder and start them
+        Thread myFirst = Thread.ofPlatform().start(new VL_02_MyRunnable(-1));
+        Thread mySecond = Thread.ofPlatform().name("foo").start(new VL_02_MyRunnable(-2));
+
+        // await termination of both threads
+        try{
+            myFirst.join(); mySecond.join();
+        } catch(Exception e){}
+
+        // start some anonymous threads from MyRunnable
+        for(int n = 1; n <= 10; n += 1){
+            Thread.ofPlatform().start(new VL_02_MyRunnable(n));
+        }
+        System.out.println("* * *");
+}
+
+Fazit: Wie erwartet: Neue Threads werden erzeugt und nebenläufig zum main-Thread ausgeführt
+
+Zwei weitere Interfaces
+- Frage: Können Threads einen Ergebniswert zurückliefern?
+
+1. java.util.concurrent.Executor:
+
+- Interface, enthält Methode execute(Runnable r),
+um Runnable-Objekte in Zukunft irgendwann auszuführen
+
+- Implementierungen legen fest: sollen diese in einem neuen Thread, einem wiederverwendeten Thread
+oder im aufrufenden Thread geschehen
+
+2. java.util.concurrent.ExecutorService:
+
+- Erweitert Executor, bietet zusätzliche Methoden: submit() für Runnable und Callable
+- Bietet Mechanismen zum Herunterfahren: shutdown() und shutdownNow()
+- Instanzen werden über Factory-Methoden von Executors erzeugt
+
+3. java.util.concurrent.Executors:
+- Klasse bietet Factory-Methoden zur Erzeugung von verschied. Thread-Pools:
+  -> newCatchedThreadPool(): Threads werden wierderverwendet und bei Bedarf Neue erstellt
+  -> newFixedThreadPool(int nThreads): Ein fester Pool mit einer festen Anzahl von Threads.
+  -> newSingleThreadExecutors(): Aufgaben werden sequentiell in einem einzigen Thread ausgeführt
+  -> newScheduledThreadPool(int poolSize): Aufgaben werden nach festen Zeitplan ausgeführt oder wiederholt
+  -> newWorkStealingPool(int parallelism): Threads "stehlen" Aufgaben aus anderen Warteschlangen, um Parallelität sicherzustellen
+  -> newVirtualThreadPerTaskExecutor(): Startet virtuelle Threads für jede übermittelte Aufgabe (Java 21)
+
+4. java.util.concurrent.ForkJoinPool:
+  -> Spezieller ExecutorService für rekursive Aufgaben nach "Devide and Conquer"-Prinzip
+  -> Unterstützt Work-Stealing zur Maximierung von Parallelität
+  -> Methoden:
+     - execute(ForkJoinTask<?> task): Führt eine Aufgabe asynchron aus
+     - invoke(ForkJoinTask<T> task): Führt eine Aufgabe aus und wartet auf Ergebnis
+
+5. ForkJoinTask<V>:
+  -> Abstrakte Basisklasse für rekursive Berechnungen: Methode compute() wird überschrieben,
+     um eigentliche Berechnungen zu implementieren
+
+     Unterklassen sind:
+     - RecursiveTask<V>: Liefert ein Ergebnis
+     - RecursiveAction: Führt Aufgabe ohne Rückgabe von Ergebnis aus
+
+Zusammenfassung:
+Diese Klassen und Methoden bieten effiziente Möglichkeit, parallele oder asynchrone Aufgaben auszuführen:
+Threads werden effizient verwaltet und wiederverwendet.
+Besonders ForkJoinPool und ExecutorService sind wichtige Werkzeuge für Parallelprogrammierung in Java
+
+Beispiel: CachedThreadPool
+
+package vl;
+
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+public class VL_02_CachedPool {
+    public static void runTest(ExecutorService executorService, int timeOut){
+        // submit some runnables to my executorService
+        for(int i = 0; i < 10; i += 1){
+            executorService.submit(new VL_02_MyRunnable(i));
+        }
+
+        // wait some time
+        try{Thread.sleep(timeOut);} catch(Exception e) {}
+
+        System.out.println("submitting more Runnables...");
+        // again execute some runnables in my executorService
+        for(int i = 0; i < 10; i += 1){
+            executorService.execute(new VL_02_MyRunnable(100 + i));
+        }
+    }
+
+    public static void main(String... args){
+        ExecutorService executorService = Executors.newCachedThreadPool();
+
+        // print data of main thread
+        VL_02_Utils.printThreadData(null);
+
+        runTest(executorService, 1000);
+        // runTest(executorService, 0);
+
+        VL_02_Utils.shutdown(executorService);
+
+    }
+}
+
+Fragen:
+- Welche Ausgabe liefert vorherige main() ?
+
+  Antwort: Wenn man runTest(executorService, 1000) ausführt ...
+  - Zuerst werden Thread-Daten von main() ausgegeben
+  - Dann werden 10 Runnable-Aufgaben gestartet, die jeweils eine Sekunde schlafen
+  - Nach einer Sekunde kommt die Nachricht: "submitting more Runnables..."
+    und es werden weitere 10 Aufgaben in den Pool gegeben
+  - shutdown()-Aufruf wartet, bis alle Threads ihre Aufgabe beendet haben,
+    und schaltet danach Executor ab
+
+- Welche Ausgabe liefert vorherige main(), wenn dort der Aufruf
+  runTest(executorService, 1000), durch runTest(executorService, 0) ersetzt wird?
+
+  Antwort: Wenn Wert von timeOut auf 0 gesetzt wird, wird keine Pause gemacht.
+  Die neuen Aufgaben (die weiteren 10) werden sofort in den Pool gegeben,
+  ohne auf die ersten Aufgaben zu warten. Die Threads werden schneller belastet, da alle Aufgaben
+  sehr schnell übergeben werden.
+
+- Was ändert sich, wenn in vorherige main() die Variable executorService mit
+  Executors.newFixedThreadPool(3) initialiert wird?
+
+  Antwort:
+  - Nur drei Aufgaben werden gleichzeitig ausgeführt.
+  - Die restlichen Aufgaben warten, bis einer der drei Threads mit seiner Arbeit
+    fertig ist und die nächste Aufgabe übernimmt
+
+Spezialfall: Nebenläufige Streams
+
+- Frage: Was passiert beim Aufruf der folgenden Methode?
+
+public static void runTest(IntStream stream){
+    // submit some runnables to the stream in parallel
+    stream.parallel().forEach(Utils::doit);
+}
+
+zum Beispiel durch runTest(IntStream.range(0, 10));
+
+Antwort: Die Stream-Pipeline wird nebenläufig im Standard-ForkJoinPool
+unter Zuhilfenahme des (angehaltenen) main-Thread ausgeführt!
+
+Verketten asynchroner Aktionen
+- In reaktiven Systemen: Nach Abschluss einer asynchronen Aktion,
+  automatisch eine weitere gestartet werden.
+
+- Lösung: java.util.concurrent.CompletableFuture
+  Es ermöglicht, ausführen asynchrone Aktionen hintereinander - Beispiel:
+
+  Runnable task1 = () -> Utils.doit(1);
+  Runnable task2 = () -> Utils.doit(2);
+  Runnable task3 = () -> Utils.doit(3);
+
+  CompletableFutur.runAsync(task1).thenRun(task2).thenRun(task3);
+
+  Frage: In welchen Treads werden Tasks ausgeführt, da sie asynchron und parallel arbeiten?
+
+Varianten von thenRun
+- CompletableFuture bietet verschied. Möglichkeiten für asynchrone Aktionen
+  => runAsync(Runnable r),
+  => runAsync(Runnable r, Executor e),
+  => thenRun(Runnable r),
+  => thenRunAsync(Runnable r)
+  => thenRunAsync(Runnable r, Executor e)
+  => supplyAsync(Supplier<U> s)
+  => ...
+- Je nachdem, ob ein Executor oder ein Supplier verwendet wird
+
+Java Virtual Threads - Vorüberlegungen:
+- Serveranwendugenn haben oft viele Threads, werden oft durch blockierende I/O-Operationen pausiert
+- Herkömmliche Threads sind teuer in Erstellung und erfordern viel Speicher,
+  sind deshalb für paralellen Betrieb von vielen Threads ineffizient
+
+Java Virtual Threads - Idee:
+- Java Virtual Threads sind leichtgewichtig, werden von JVM verwaltet
+- Sind einfach zu erstellen, brauchen kein Thread-Pooling,
+  verwenden zur Ausführung klassische OS-Threads
+
+Java Virtual Threads - noch mehr:
+- Virtual Threads bieten Vorteile bei blockierenden Code, nicht bei rechenintensiven Aufgaben
+- Vereinfachen Verwaltung von parallelen Prozessen,
+  verwenden speziellen ForkJoinPool zur Effizienzsteigerung
+
+Thread-Typen in Java
+- Java bietet drei Haupttypen von Threads:
+  Plataform Threads, Green Threads, Virtual Threads
+- Neue Generation der Virtual Threads erlaubt flexible Verwaltung von vielen Threads gleichzeitig
+
+Java Virtual Threads - Beispiel (1)
+- Start über Thread.startVirtualThread:
+
+package vl;
+
+import java.util.stream.IntStream;
+
+public class VL_02_01_VirtualthreadsPerThreadBuilder {
+    public static void main(String[] args) {
+        final int noOfTasks = 10_000;
+
+        Thread[] allThreads = new Thread[noOfTasks];
+        IntStream.range(0, noOfTasks).forEach(i ->
+                allThreads[i] = Thread.startVirtualThread(() -> VL_02_Utils.doit(i)));
+
+        for (int i = 0; i < allThreads.length; ++i) {
+            try {
+                allThreads[i].join();
+            } catch (Exception e) {
+            }
+        }
+    }
+}
+
+- Start über Thread.Builder:
+
+package vl;
+
+import java.util.stream.IntStream;
+
+public class VL_02_02_VirtualthreadsPerThreadBuilder {
+    public static void main(String[] args) {
+        final int noOfTasks = 10_000;
+
+        Thread.Builder threadBuilder = Thread.ofVirtual();
+        // Thread.Builder threadBuilder = Thread.ofPlatform();
+
+        Thread[] allThreads = new Thread[noOfTasks];
+        IntStream.range(0, noOfTasks).forEach(i -> {
+            String name = String.format("doit(%s)", i);
+            allThreads[i] = threadBuilder.name(name).start(() -> VL_02_Utils.doit(i));
+        });
+
+        for (int i = 0; i < allThreads.length; ++i) {
+            try {
+                allThreads[i].join();
+            } catch (Exception e) {
+            }
+        }
+    }
+}
+
+- Start über ExecutorService
+
+package vl;
+
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.stream.IntStream;
+
+public class VL_02_03_VirtualthreadsPerExecutorService {
+    public static void main(String[] args) {
+        final int noOfTasks = 10_000;
+        final ExecutorService executorService = Executors.newVirtualThreadPerTaskExecutor();
+        IntStream.range(0, noOfTasks).forEach(i ->
+                executorService.submit(() -> VL_02_Utils.doit(i))
+        );
+        executorService.close();
+    }
+
+}
+
+2.2 Gute Programmbeispiele?
+- Frage: Können auch Probleme bei Parallelprogrammierung auftreten?
+- Frage anhand von drei einfachen Programmbeispielen beantworten
+
+
+1. Beispiel: StrangeCounter
+package vl;
+
+import java.util.concurrent.CountDownLatch;
+
+public class VL_02_04_StrangeCounter {
+    private final static int INCREMENTERS = 2;
+    private final static int RUNS = 5;
+
+    private static long counter = 0;
+
+    protected static class Incrementer implements Runnable {
+        private final CountDownLatch start, end;
+
+        public Incrementer(CountDownLatch start, CountDownLatch end) {
+            this.start = start;
+            this.end = end;
+        }
+
+        public void run() {
+            try {
+                start.await();
+                for (int i = 0; i < RUNS; ++i) {
+                    ++counter;
+                }
+                end.countDown();
+            } catch (Exception e) {
+            }
+        }
+    }
+
+    public static void main(String[] args) {
+        CountDownLatch startLatch = new CountDownLatch(1);
+        CountDownLatch endLatch = new CountDownLatch(INCREMENTERS);
+
+        Thread.Builder tb = Thread.ofPlatform();
+        // Thread.Builder tb = Thread.ofVirtual();
+        for (int i = 0; i < INCREMENTERS; ++i) {
+            tb.start(new Incrementer(startLatch, endLatch));
+        }
+
+        try {
+            System.out.println("Starting with counter = " + counter);
+            startLatch.countDown();
+            endLatch.await();
+            long totalInc = RUNS * INCREMENTERS;
+            System.out.println("Finished after " + totalInc + " increments width counter = " + counter);
+        } catch (Exception e) { }
+    }
+}
+
+- Ergebnis:
+  Starting with counter = 0
+  Finished after 10 increments width counter = 10
+
+- Fragen zu StrangeCounter
+  => Was macht das Programm? Arbeitet es korrekt?
+
+  Das Programm startet zwei parallele Threads, die einen gemeinsamen Zähler fünfmal inkrementieren.
+  Es verwendet CountDownLatch, um Threads gleichzeitig starten zu lassen und das Ende abzuwarten
+
+  Problem: Zähler wird nicht synchronisiert, was zu falschen Ergebnissen führen kann (Race Condition)
+  Beide Threads könnten gleichzeitig auf den Zähler zugreifen, das Endergebnis kann dadurch ungenau sein
+
+  Lösung: Zähler sollte entweder synchronisiert oder durch AtomicLong ersetzt werden,
+  um korrekte Inkrementierung sicherzustellen:
+
+  synchronized-Blocks:
+  private static synchronized void incrementCounter(){
+    ++counter;
+  }
+
+  AtomicLong:
+  private static AtomicLong counter = new AtomicLong(0);
+
+  => Ändert sich etwas, wenn z. B. ¨ INCREMENTERS = 20 und
+     RUNS = 50 gesetzt werden? Was passiert hier?
+
+  20 paralelle Threads inkrementieren den Zähler jeweils 50 mal.
+  Insgesamt soll Zähler auf 1000 (20*50) erhöht werden.
+
+  Ich habe tatsächlich: 1000
+
+  Starting with counter = 0
+  Finished after 1000 increments width counter = 1000
+
+=> Was passiert, wenn der Wert INCREMENTERS = 1 ist?
+
+   Nur ein Thread übernimmt die Aufgabe, um den Zähler zu inkrementieren. Da es nur einen Thread gibt,
+   besteht kein Risiko von Race Conditions, da kein anderer Thread gleichzeitig auf den Zähler zugreift.
+
+   Starting with counter = 0
+   Finished after 50 increments width counter = 50
+
+=> Gibt es für INCREMENTERS > 1 Unterschiede im Ergebnis, wenn für Zähler
+   der Typ int statt long verwendet wird? Warum?
+
+   Wenn INCREMENTS = 1: Es gibt keine Probleme, da nur ein Thread den Zähler manipuliert
+   WENN INCREMENTS > 1: Es kommt zu falschen Ergebnissen, egal ob Zähler int oder long ist,
+   solange keine Synchronisation verwendet wird. Ob int oder long, macht hier keinen großen
+   Unterschied, weil beide Zugriffe durch mehrere Threads betroffen sind
+
+=> Gibt es Unterschiede im Ergebnis, wenn Sie die parallelen Prozesse statt über direkte Threads
+   auf andere Arten starten (z.B. als Runnable über einen Executor, als Callable über einen
+   ExecutorService, parallele Streams, ...)?
+
+   Unterschiede:
+   - ExecutorService(Runnable/Callable): Hier werden explizit Threads erstellt
+     und über ExecutorService verwaltet. Dies ermöglicht mehr Kontrolle über Thread-Pools
+     und ihre Verwaltung
+
+   - Parallele Streams: Parallele Stream-Verarbeitung delegiert das Thread-Management
+     an das Fork-Join-Pool, was zu einfach zu implementieren ist, aber weniger Kontrolle
+     über Thread-Verwaltung bietet.
+
+   Ergebnisunterschiede:
+   - Direkte Threads: Ohne ordnungsgemäße Synchronisation, counter wird nicht korrekt inkrementiert,
+   wenn mehrere Threads gleichzeitig darauf zugreifen
+
+   - ExecutorService: Ähnlich wie im ersten Fall, ohne Synchronisation können Race Conditions
+   auftreten, aber Thread-Verwaltung ist effizienter
+
+   - Parallele Streams: Auch hier treten ohne Synchronisation Race Conditions auf, da Threads
+   im Hintergrund gleichzeitig auf counter zugreifen
+
+2. Beispiel: "Webseiten-Zugriffsmerker"
+
+- Aufgabe: Ein Modul in einen Webserver soll zu ausgewählten Webseiten das Datum
+des letzten Zugriffs speichern.
+
+- Lösung: Implementierung in Java unter Einsatz des Abstrakten Datentyps "Wörterbuch" (Map-Interface)
+Fasse Pfadnamen jeder Seite aus Objekt vom Typ String auf, assoziiere mit ihm das Date-Objekt
+des aktuellen Datums.
+
+package vl;
+
+import java.util.Date;
+import java.util.Map;
+
+public class VL_02_05_WebStat {
+    // map used to store the (key, value) pairs
+    private Map<String, Date> map;
+
+    public VL_02_05_WebStat(Map<String, Date> map) {
+        // initialize local variable from constructor
+        this.map = map;
+        this.map.clear();
+    }
+
+    public void rememberLastAccess(String location) {
+        map.put(location, new Date());
+    }
+}
+
+package vl;
+
+import java.util.Date;
+import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+
+public class VL_02_06_WebClientSimulator implements Runnable {
+    private final VL_02_05_WebStat webStat;
+    private final int noOfPages;
+    private final int name;
+    private final CountDownLatch start, end;
+
+    public VL_02_06_WebClientSimulator(VL_02_05_WebStat webStat, int noOfPages, int no, CountDownLatch start, CountDownLatch end) {
+        this.webStat = webStat;
+        this.noOfPages = noOfPages;
+        this.name = no;
+        this.start = start;
+        this.end = end;
+    }
+
+    public void run() {
+        try {
+            start.await();
+            // visit all pages
+            for (int i = 0; i < noOfPages; ++i) {
+                // create location name from thread name and current loop index
+                String location = "/directory_accessed_by_" + name + "/page" + i + ".html";
+                webStat.rememberLastAccess(location);
+            }
+            end.countDown();
+        } catch (Exception e) {
+        }
+    }
+}
+
+package vl;
+
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+
+public class VL_02_07_StrangeMap {
+    private final Map map;
+    private final int noOfReaders;
+    private final int noOfPagesPerReader;
+    private final CountDownLatch start;
+    private final CountDownLatch end;
+
+    public VL_02_07_StrangeMap(Map<String, Date> map, int noOfReaders, int noOfPagesPerReader) {
+        this.map = map;
+        this.noOfReaders = noOfReaders;
+        this.noOfPagesPerReader = noOfPagesPerReader;
+        this.start = new CountDownLatch(1);
+        this.end = new CountDownLatch(noOfReaders);
+        start();
+    }
+
+    void start() {
+        try {
+            VL_02_05_WebStat webStat = new VL_02_05_WebStat(map);
+
+            // create readers
+            Thread.Builder tb = Thread.ofPlatform();
+            for (int i = 0; i < noOfReaders; ++i) {
+                tb.start(new VL_02_06_WebClientSimulator(webStat, noOfPagesPerReader, i, start, end));
+            }
+
+            // start readers
+            start.countDown();
+
+            // wait for termination of readers
+            end.await();
+        } catch (Exception e) {
+        }
+    }
+
+    public static void main(String[] args) {
+        Map<String, Date> map;
+        // map = new Hashtable<String, Date>(1);
+        map = new HashMap<String, Date>(1);
+        // map = Collections.synchronizedMap(new HashMap<String, Date>(1));
+        new VL_02_07_StrangeMap(map, 25, 1500);
+
+        // check content of map now!
+    }
+}
+
+Fragen:
+1. Wie lautet der Inhalt von map am Ende der main() ?
+
+   Am Ende von main() hat die Map 37.500 Einträge. Jeder Eintrag speichert:
+   - Key (Schlüssel): Den Pfad einer besuchten Webseite, z.B.:
+     "/directory_accessed_by_0/page0.html"
+   - Value (Wert): Das Datum und die Uhrzeit des letzten Zugriffs auf diese Seite (als Date-Objekt)
+   Es gibt 25 Webclients, die jeweils 1500 Seiten besuchen; 25 * 1500 = 37.500 Einträge
+
+2. Was passiert, wenn viele Threads nebenläufig die Methode
+   rememberLastAccess derselben WebStat-Instanz aufrufen?
+
+   Die Map-Datenstruktur ist nicht thread-sicher. Auf diese Art würde es zu einer Race Condition
+   kommen, da mehrere Threads versuchen gleichzeitig, die gleiche Map zu ändern.
+   Da eine normale HashMap nicht für paralelle Zugriffe ausgelegt ist, können Race Conditions auftreten.
+
+   Um dies zu verhindern, sollte eine thread-sichere Map verwendet werden, wie z.B.:
+   - Collections.synchronized(new HashMap<>())
+   - oder ConcurrentHashMap, speziell für parallele Zugriffe entwickelt
+
+Achtung: Manche Map-Implementierung nicht "thread-safe"!
+Speicheroperationen laufen nicht atomar ab.
+Führt zu "Müll" im Speicher. Zugriffe auf gemeinsam benutzte Ressourcen müssen synchronisiert werden
+
+3. Beispiel: "Die dinierenden Philosophen"
+Beim Problem der "dinierenden Philosophen"
+versuchen fünf Philosophen abwechselnd zu denken und zu essen.
+Jeder benötigt zwei Gabeln, um zu essen, aber es gibt nur fünf Gabeln.
+Wenn alle Philosophen gleichzeitig nach den Gabeln greifen,
+kann es zu einem Deadlock (Verklemmung) kommen,
+wo keiner essen kann, weil jeder auf die zweite Gabel wartet.
+Die Herausforderung besteht darin, diesen Deadlock zu verhindern
+und einen geordneten Ablauf zu finden.
+
+Zusammenfassung (2)
+- Nachlässiger Einsatz von Parallelität kann zu unerwarteten Ergebnissen führen
+- Einfaches Testen reicht nicht aus, da zeitliche Verzahnung paraleller Prozesse unvorhersehbar ist
+- Korrektheit der Implementierung muss formal bewiesen werden
+________________________________________________________________________________________________
+    3 Modellierung von Prozessen
+
+- Wie können Prozesse modelliert werden?
+- Wie lassen sich Prozesse in Java darstellen?
+
+3.1 Sequentielle Prozesse
+- Fakten:
+-> Jeder Prozess: Besteht aus Folge atomarer Aktionen
+-> Jeder Prozess: Lässt sich zu jedem Zeitpunkt, durch seine Variablenwerte (d.h. seinen Zustand) beschreiben
+-> Bei jeder Aktionsausführung wird eine Zustandstransformation ausgeführt
+-> Bei endlicher Zustandsmenge: Es lassen sich Zustandsgraphen darstellen -> Um Prozesse graphisch darzustellen
+   * Jeder Zustand entspricht einem Knoten
+   * Jede Aktion entspricht einer Kante
+-> Jeder Zustandsgraph wird als Prozess verstanden
+
+DEFINITION: - Solche Zustandsgraphen => "LTS (Labeled Transition System)".
+            - Anfangszustand des Prozesses hat Bezeichnung 0
+
+LTS-Beispiel: Prozess "Lichtschalter"
+- Zustände des Prozesses: {0, 1}
+- Lichtschalter-Aktionen: ein, aus
+- Zustandsgraph: 0 -> 1 (ein); 1 -> 0 (aus)
+- Aktionsfolge: ein -> aus -> ein -> aus -> ...
+- BEMERKUNG: Beschriebenes Verhalten muss nicht endlich sein, selbst bei endlicher Zustandsmenge
+
+DEFINITION: Entstandene Aktionsfolge durch Prozessausführung wird als Trace bezeichnet.
+
+Algebraische Beschreibung von Prozessen durch "FSP (Finite State Processes)"
+- Bei großen Anzahl von Zuständen => graphische Darstellung unübersichtlich
+- Für eine "griffige" Beschreibung => algebraische Notation geeignet
+
+- DEFINITION: * Ist x eine Aktion und P ein beliebiger Prozess,
+              * dann wird durch Präfixoperator (x -> P) ein neuer Prozess definiert.
+              * Erst wird Aktion x ausgeführt, danach verhält sich das wie der Prozess P.
+              * Anderen Worten: Prozess beginnt mit Ausführung von x und übernimmt Verhaltensweise von P
+              * Beispiel: Es gibt den Prozess P, das das Betreten in einem Raum beschreibt. Der Prozess besteht aus vielen
+              zusammenhängenden Aktionen wie,
+              1. Tür öffnen, dann
+              2. den ersten Schritt in dem Raum setzen
+              3. dann den zweiten Schritt.
+              4. dann die Tür zu machen
+              5. dann sich irgendwo hinsetzen, etc.
+
+              Dieser ganzen Aktionen {1; 2; 3; 4; 5; etc.} werden als Prozess P bezeichnet. Dieser Prozess P wird angestoßen,
+              durch die erste Aktion 1. Tür öffnen / oder Aktion x, so schreibt man / definiert man durch
+              Präfixoperator (x -> P) den Prozess.
+- BEMERKUNG: In FSP => Aktionen werden mit kleinen Buchstaben geschrieben, Prozesse mit großen Buchstaben
+
+- DEFINITIONEN: STOP bezeichnet besonderen Prozess, davon keine weiteren Prozessen ausgehen
+- Beispiel: Ein Prozess: Führt eine Aktion, wird dann determiniert
+
+  EINSCHRITT = (schritt (0) -> STOP (1))
+
+  Bemerkung: IN FSP sind Rekursionen möglich
+
+FSP-Beispiel: Prozess "Lichtschalter"
+- Aus Trace des Prozesses kann man eine FSP-Beschreibung ablesen
+* ein -> aus -> ein -> aus -> ein -> aus -> ...
+* {ein -> aus -> ein -> aus -> ein -> aus -> ...} => AUS
+*        {aus -> ein -> aus -> ein -> aus -> ...} => EIN
+*               {ein -> aus -> ein -> aus -> ...} => AUS
+
+- Der Trace oben stellt Wechsel eines Lichtschalters zwischen "ein" und "aus" dar.
+- Lichtschalter kann eingeschaltet oder ausgeschaltet werden, und der Vorgang kann sich zyklisch wiederholen
+- FSP-Beschreibung: Prozess Lichtschalter wird in algebraischer FSP-Notation beschrieben
+
+  * SCHALTER = AUS:     Lichtschalter-Startzustand, der intial auf "AUS" steht
+  * AUS = (ein -> EIN): Im Zustand AUS kann Aktion ein ausgeführt werden, worauf Zustand EIN folgt.
+  * EIN = (aus -> AUS): Im Zustand EIN kann Aktion aus ausgeführt werden, worauf Zustand AUS folgt.
+
+- Prozess SCHALTER beginnt im Zustand AUS. Wenn Schalter eingeschaltet wird (ein), wechselt er zum Zustand EIN,
+  Im Zustand EIN kann Schalter wieder ausgeschaltet werden (aus), wodurch er wirder zum Zustand AUS gelangt
+
+- Andere Beschreibung: Durch Einsetzen der Beschreibung von EIN in der Beschreibung von AUS
+
+  * SCHALTER = AUS
+  * AUS = (ein -> (aus -> AUS)).
+
+- Noch weiter vereinfacht, ergibt:
+
+  * SCHALTER = (ein -> aus -> SCHALTER).
+
+- Alle drei Beschreibung von SCHALTER sind gleichwertig.
+  Kurze Zusammenfassung von SCHALTER:
+  ----------------------------
+  * SCHALTER = AUS
+  * AUS = (ein -> EIN)
+  * EIN = (aus -> AUS)
+  ----------------------------
+  * SCHALTER = AUS
+  * AUS = (ein -> (aus -> AUS))
+  ----------------------------
+  + SCHALTER = (ein -> aus -> SCHALTER).
+  ----------------------------
+
+LTS Analyse-Tool (LTSA)
+- Prozessanalyse soll nicht "von Hand" sondern durch Tool-Unterstützung durchführen
+- LTSA
+  * liest algebraische Beschreibung
+  * bietet einfachen Editor
+  * produziert Darstellung des Zustandsgraphen
+  * produziert Traces
+  * ...
+
+Auswahloperator
+- Bisherige Prozesse lieferten einen Trace
+- Auswahl war nicht möglich
+- DEFINITION: * Seien x und y zwei mögliche Aktionen, die der Prozess ausführen kann
+              * Seien P und Q zwei mögliche Prozesse, die auf die Aktionen folgen können
+              * Auswahloperator (x -> P | y -> Q) beschreiben einen Prozess, der sich entweder wie
+                -> (x -> P), oder wie
+                -> (y -> Q) verhält.
+
+Beispiel "Getränkeautomat"
+- Getränkeautomat als FSP-Beschreibung:
+  GETRÄNKE = (roterKnopf -> kaffee -> GETRÄNKE
+             | blauerKnopf -> tee -> GETRÄNKE).
+- Bemerkung: Im Zustandsdiagramm - keine Unterscheidung zwischen Eingabeaktionen (was in den Prozess hineingeht)
+             und Ausgabeaktionen (was aus dem Prozess herauskommt).
+             Unterscheidung ergibt sich aus dem Kontext, sprich, Bedeutung der Aktionen
+
+- Auswahl mit mehr als zwei Alternativen:
+  GETRAENKE = (roterKnopf -> kaffee -> GETRAENKE
+              |blauerKnopf -> tee -> GETRAENKE
+              |gruenerKnopf -> LEER
+              |gelberKnopf -> LEER),
+  LEER = (leer -> GETRAENKE).
+
+- Spezialfälle der Alternative
+  Vorheriges Beispiel:
+  GETRAENKE = (gruenerKnopf -> LEER
+              | gelberKnopf -> LEER),
+  In derselben Alternative, auf zwei unterschied. Aktionen, dersebe Prozess
+
+  Frage: Lässt sich das umdrehen? Auf dieselbe Aktion folgen unterschiedliche Prozesse?
+  GETRAENKE = (roterKnopf -> KAFFEE
+              |roterKnopf -> TEE),
+  FRAGE: Was heißt das?
+
+- Nichtdeterministische Auswahl
+  Bisher: Auswahl nach der ersten Aktion der folgende Prozess genau bestimmt (deterministische Ausführung)
+
+  DEFINITION: Eine Auswahl (x -> P | x -> Q) heißt nichtdeterministisch,
+  weil nach Ausführung von x entweder P oder Q folgen kann (genaues Verhalten ist nicht bestimmt)
+
+- Beispiel: "Münzwurf"
+  Folgeaktion (d.h. Ausgabe) der Aktion "wurf" ist nicht vorherbestimmt.
+
+  MUENZE = (wurf -> kopf -> MUENZE
+           |wurf -> zahl -> MUENZE).
+
+- Indizierte Prozesse und Aktionen
+  * Möchte man verschied. Eingabewerte verarbeiten, kann man in algebraischen Darstellung von Prozessen
+    und auch in Zustandsgraphen Indizes verwenden
+  * "Indices" sind hier ähnlich wie "Parameter" in Programmierung. Sie erlauben, mehrere Varianten eines Prozesses
+    oder einer Aktion zu definieren, die sich nur im Index (Parameter) unterscheiden
+  * "Indices" haben immer endlichen Wertebereich (dadurch bleibt Modell in FSP und LTS endlich)
+- Beispiel: "indizierter Prozess"
+  * Prozess, der eine Zahl im Wertebereich von 0..3 speichern kann:
+  PUFFER = (in[0] -> out[0] -> PUFFER
+           |in[1] -> out[1] -> PUFFER
+           |in[2] -> out[2] -> PUFFER
+           |in[3] -> out[3] -> PUFFER).
+  kürzer als:
+  range T = 0..3
+  PUFFER = (in[i:T] -> out[i] -> PUFFER).
+
+- Beispiel: "doppelt indizierter Prozess"
+  - Porzess, indem zwei Zahlen addiert werden können
+  const N = 1
+  range T = 0..N
+  range R = 0..2*N
+  SUM = (in[a:T][b:T] -> TOTAL[a+b]),
+  TOTAL[s:R] = (out[s] -> SUM).
+
+- Parametrisierung von Prozessen
+  * Prozesse parametrisieren, um auch für allgemeine Werte zu gelten
+  * Beispiel: Puffer der Größe N
+  * PUFFER(N=3) = (in[i:0..N] -> out[i] -> PUFFER).
+  * PUFFER(N=10) = (in[i:0..N] -> out[i] -> PUFFER).
+
+- Bewachte Aktion
+  * Bisher kann noch keine Bedingung formuliert werden (vergleichbar der if-Anweisung)
+  * DEFINITION: Die Auswahl (when B x -> P | y -> Q) beschreibt einen Prozess, mit folgendem Verhalten:
+    - Ist Bedingung des Wächters B erfüllt, kann x ausgeführt werden
+    - Ist Bedingung des Wächters B nicht erfüllt, kann nur die Aktion y ausgeführt werden.
+
+  * Bemerkung: Bedeutung bewachter Aktionen geringfügige Unterscheidung von if-Anweisung
+  * Beispiel: Anweisung
+    if (i == 0)
+        x(); P();
+    else
+        y(); Q();
+  * Folgendermaßen als bewachte Aktion:
+    (when(i==0) x -> P
+    |when(i!=0) y -> Q).
+- Beispiel: "Zähler"
+  * Ein Zähler kann mit Aktionen "inc" und "dec" hoch- bzw. heruntergezählt werden
+  * ZAEHL(N=3) = ZAEHL[0],
+    ZAEHL[i:0..N] = (when (i<N) inc -> ZAEHL[i+1]
+                    |when (i>0) dec -> ZAEHL[i-1]).
+- Prozess-Alphabet
+  * DEFINITION: Alphabet eines Prozesses, ist die Menge der Aktionen, die er ausführen kann
+  * Alphabet eines Prozesses lässt sich durch +{...} um eine beliebige Menge erweitern
+  * Beispiel: Prozess WRITER
+  * WRITER = (write[1] -> write[3] -> WRITER)
+             + {write[0..3]}.
+    besitzt das Alphabet write[0..3].
+
+- Beispiel: Modellierung von Java-Prozessen
+  * Bemerkung: "Prozess" wird im Zusammenhang mit Modellen und Begriff "Thread" bei Java-Implementierungen
+    von Prozessen gebraucht
+  * Bemerkung: Threads sind spezielle Art von Prozessen, können durch algebraische Beschreibung bzw.
+    Zustandsgraphen modelliert werden.
+
+- Lebenszyklus eines Java-Threads
+  THREAD = CREATED,
+  CREATED = (start -> RUNNING
+            | stop -> TERMINATED),
+  RUNNING = (yield -> RUNNABLE
+            | _run -> RUNNING
+            | {stop, _end} -> TERMINATED
+            | suspend -> NON_RUNNABLE
+            | sleep -> SLEEPING),
+  RUNNABLE = (suspend -> NON_RUNNABLE
+            | _dispatch -> RUNNING
+            | stop -> TERMINATED),
+  NON_RUNNABLE = (resume -> RUNNABLE
+            | stop -> TERMINATED),
+  SLEEPING = (_wakeup -> RUNNABLE
+            | stop -> TERMINATED),
+  TERMINATED = STOP.
+
+- Zusammenfassung (3)
+  * Prozess kann entweder algebraisch durch FSP-Beschreibung, oder grafisch durch einen
+    Zustandsgraphen (LTS) modelliert werden
+  * in FSP gibt es z.B. Präfix, Auswahl-, nichtdeterministische Auswahl- oder bewachte Aktionen,
+  * es wird nicht zwischen Eingabe- und Ausgabeaktionen unterschieden
+  * Lebenszklus eines Java-Threads ist auch als Prozess modellierbar.
+
+3.2 Modellierung von Nebenläufigkeit
+- Wie Nebenläufigkeit modellieren?
+- Nebenläufigkeit-Modellierung soll unabhängig von Ausführung sein,
+  sprich: Prozessorenanzahl, Prozessorvergabestrategie, Prozessorgeschwindigkeit, usw.
+
+- Wiederholung
+  * Modellierung => zeitlos (keine Annahme über Dauber der Aktion)
+  * jeder Prozess => Aus Folge atomarer Aktionen
+  * jeder Prozess => wird auf einem Prozessor ausgeführt
+  * (Prozessor > 1) => parallele Verarbeitung nebenläufiger Prozesse möglich
+  * (nebenläufige Prozesse > Prozessoren) => Prozessumschaltung entsprechend einer
+    Prozessorvergabestrategie notwendig.
+
+  * DEFINITION: Parallele Komposition von Prozessen
+    - Wenn wir zwei beliebige Prozesse P und Q haben, können wir sie zusammen
+      in einen neuen Prozess S bringen, bezeichnet als parallele Komposition
+    - Prozess S beschreibt gleichzeitige, parallele Ausführung der Prozesse P und Q
+      ||S = (P||Q)
+    - EINFACH: Parallele Komposition erlaubt, zwei Prozesse nebeneinander laufen zu lassen,
+      ohne dass der eine auf den anderen warten muss.
+
+  * Bemerkung: - parallele Komposition kann wieder durch Zustandsgraph ausgedrückt werden
+               - Traces(Abläufe) der parallele Komposition (P||Q) umfassen alle möglichen
+                 Reihenfolgen der Aktionen von P und Q - alle möglichen Kombinationen, in denen
+                 irgendwelche Aktionen von P und Q miteinander verflochten werden können
+
+- Beispiel: "Parallele Komposition"
+  * Definition nebenläufiger Prozesse Jucken und Reden:
+  * Jucken = (kratzen -> STOP).
+  * Reden = (denken -> reden -> STOP).
+  * || JuckenReden = (Jucken || Reden).
+
+  * Traces von JuckenReden:
+    1. denken -> reden -> kratzen
+    2. kratzen -> denken -> reden
+    3. denken -> kratzen -> reden
+
+  * Bemerkung: In Traces der parallelen Komposition: Reihenfolge der Aktionen,
+    jeweilige Einzelprozesse wird eingehalten. Beispiel: reden kommt nie vor denken
+
+- Variante (1)
+  * Wiederholte Ausführung durch rekursive Prozessdefinition:
+  * Jucken2 = (kratzen -> Jucken2).
+  * Reden2 = (denken -> reden -> Reden2).
+  * ||JuckenReden2 = (Jucken2 || Reden2).
+  * Traces von JuckenReden2:
+    - denken -> reden -> kratzen -> kratzen -> denken -> ...
+    - denken -> reden -> denken -> kratzen -> reden -> ...
+    - ...
+
+- Variante (2)
+  * Jucken3 = (kratzen -> wohlfuehlen -> Jucken3).
+  * Reden3 = (denken -> reden -> zuhoeren -> Reden3).
+  * ||JuckenReden3 = (Jucken3 || Reden3).
+  * Traces von JuckenReden3: ?
+  * Bemerkung: Parallele Komposition
+    - kommutativ, d.h. (P||Q) = (Q||P),
+    - assoziativ, d.h. (P||(Q||R)) = ((P||Q))R) = (P||Q||R).
+
+- Beispiel: "Gemeinsame Aktionen"
+  * Definition nebenläufige Prozesse Vater und Sohn:
+  * Vater = (arbeiten -> treffen -> fernsehen -> STOP).
+  * Sohn = (spielen -> treffen -> schlafen -> STOP).
+  * ||Tagesablauf = (Sohn || Vater).
+
+  * Traces von Tagesablauf:
+  1. arbeiten -> spielen -> treffen -> fernsehen -> schlafen
+  2. arbeiten -> spielen -> treffen -> schlafen -> fernsehen
+  3. spielen -> arbeiten -> treffen -> fernsehen -> schlafen
+  4. spielen -> arbeiten -> treffen -> schlafen -> fernsehen
+
+
+- "Produktions- und Verbrauchsprozess (1)"
+  * Prozessbeschreibung:
+  * Prod = (prod -> fertig -> Prod).
+  * Verbr = (fertig -> verbr -> Verbr).
+  * ||Konsum = (Prod || Verbr).
+
+  * Traces:
+    - prod -> fertig -> verbr -> prod -> fertig -> verbr -> ...
+    - prod -> fertig -> prod -> verbr -> fertig -> verbr -> ...
+
+  * Eigenschaften dieser Implementierung:
+    Nachdem ein Teil produziert wurde, kann
+    - verbrauch des 1. Teils, und
+    - produktion des 2.  Teils, gleichzeitig erfolgen
+  * Frage: Wie Produktion solange anhalten, bis das Teil verbrauch wurde?
+
+- "Produktions- und Verbrauchsprozess (2)"
+  * Prozessbeschreibung:
+  * Prod2 = (prod -> fertig_p -> fertig_v -> Prod2).
+  * Verbr2 = (fertig_p -> verbr -> fertig_v -> Verbr2).
+  * ||Konsum2 = (Prod2 || Verbr2).
+
+  * Trace:
+    - prod -> fertig_p -> verbr -> fertig_v -> prod -> fertig_p -> ...
+  * Eigenschaften dieser Implementierung
+    - Produktion eines Teils beginnt erst, wenn vorher produziertes Teil verbraucht wurde
+
+  * Bemerkung: Art der Interaktion, wobei eine Aktion durch eine zweite bestätigt wird,
+    nenne man Handshake
+    -> Bestätigen der Aktion zwischen beiden Prozessen stellt Synchronisierung sicher
+  * Bemerkung: Es können auch mehr Prozesse an gemeinsamer Aktion beteiligt worden sein
+
+- "Fertigungssystem"
+  * Fertigungssystem besteht aus zwei Produktionsprozessen, sowie ein Montageprozess
+
+  * Prod1 = (prod1 -> fertig -> montiert -> Prod1).
+  * Prod2 = (prod2 -> fertig -> montiert -> Prod2).
+  * Montage = (fertig -> montage -> montiert -> Montage).
+  * ||Fertigung = (Prod1 || Prod2 || Montage).
+
+  * Anwendung des Assoziativgesetzes - andere Darstellung
+
+  * Prod1 = (prod1 -> fertig -> montiert -> Prod1).
+  * Prod2 = (prod2 -> fertig -> montiert -> Prod2).
+  * ||Produktion = (Prod1 || Prod2).
+  * Montage = (fertig -> montage -> montiert -> Montage).
+  * ||Fertigung = (Produktion || Montage).
+
+- Label-Präfix
+  * Beispiel: System modellieren, bestehend aus zwei unabhängigen Ein-/Ausschaltern der Art:
+  * Schalter = (ein -> aus -> Schalter)
+
+- Doppelschalter: 1. Versuch
+  * Schalter = (ein -> aus -> Schalter).
+  * ||Doppelschalter = (Schalter || Schalter).
+
+  * Wenn Prozessdefinition in paralleler Komposition mehrfach verwendet wird,
+    müssen Aktionen zwischen Prozessen unterscheidbar sein.
+
+  * Definition: Sei P ein Prozess, so wird mit a:P die Bezeichnung jeder Aktion
+    (d.h. jedes "Label") im Alphabet von P mit Präfix a. versehen
+  * Beispiel: P mit Alphabet A = {eins, zwei, drei},
+    so liefert a.A = {a.eins, a.zwei, a.drei}
+
+- Doppelschalter: 2. Versuch
+  * Schalter = (ein -> aus -> Schalter).
+  * ||Doppelschalter = (a:Schalter || b:Schalter).
+
+- Variante: N-fach-Schalter
+  * Schalter = (ein -> aus -> Schalter).
+  * ||NfachSchalter(N=5) = (a[i:1..N]:Schalter).
+  * wobei a[i:1..N]:Schalter eine Kurzform für
+    forall [i:1..N] a[i]:Schalter ist.
+
+- Zur Kontrolle: 3-fach-Schalter
+  * Schalter = (ein -> aus -> Schalter).
+  * ||NfachSchalter(N=3) = (a[i:1..N]:Schalter).
+
+  * Außerdem möglich, Prozesse mit einer Menge von Präfixen zu versehen:
+  * DEFINITION: Sei P ein beliebiger Prozess, so wird durch {a1, ..., an}::P ein Prozess definiert, in dem
+    jeder Bezeichner einer Aktion (Label) l im Alphabet von P durch die Menge {a1.l, ..., 1n.l}
+    und jede Aktion (y -> Q) durch die Menge ({a1.y, ..., an.y} -> Q) ersetzt wird.
+
+    - Jede Aktion l im Prozess P wird ersetzt durch eine Menge von gekennzeichneten Aktionen
+      {a1.l, a2.l, ..., an.l}
+    - Ebenso wird jede Übergangsaktion (y -> Q) zu einer Menge von gekennzeichneten Übergängen
+      ({a1.y, a2.y, ..., an.y} -> Q)
+
+    Auf diese Weise wird jede Aktion innerhalb des Prozesses einzigartig und kann in einer komplexen
+    Struktur leichter untershieden werden.
+
+- Beispiel: "Gegenseitiger Ausschluss"
+  * Zwei Benutzer teilen sich eine Ressource
+  * Zu jeder Zeit - ein Benutzer hat Kontrolle über die Ressource
+
+  * Benutzer = (anfordern -> benutzen -> freigeben -> Benutzer).
+  * Ressource = (anfordern -> freigeben -> Ressource).
+  * ||Ausschluss = (a:Benutzer || b:Benutzer || {a,b}::Ressource).
+
+  * Ausschluss ist die parallele Komposition aus drei nebenläufigen Prozessen
+  * Eine Ressource - darf von dem Benutzer freigegeben werden, der sie auch angefordert hat
+  * im Prozess {a, b}::Ressource - auch folgender Trace erlaubt: a.anfordern -> b.freigeben -> ...
+
+  Frage: Arbeitet Gesamtprozess trotzdem korrekt? Warum?
+
+- Client-/Server-Prozess: 1. Versuch
+  * Aufgabe: Verhalten einer verteilten Client-/Server-Architektur (jeweils ein Client und ein Server)
+    zu modellieren
+
+  * Client = (call -> wait -> continue -> Client).
+  * Server = (request -> service -> reply -> Server).
+  * ||ClientServer = (Client || Server).
+
+  * Falsch: Client & Server => dessen Alphabete sind disjunkt, laufen unabhängig voneinander
+  * Frage: Wie Prozesse kombinieren, ohne Definitionsänderung?
+
+- "Relabelling"
+  * DEFINITION: Sei P ein beliebiger Prozess, so wird durch P/{neu1/alt1, ..., neun/altn}
+    ein Relabelling der Aktionen von P durchgeführt, in dem in P die alten Bezeichner alt1, ..., altn
+    durch die neuen neu1, ..., neun ersetzt werden.
+
+- Client-/Server-Prozess: 2. Versuch
+  * Client = (call -> wait -> continue -> Client).
+  * Server = (request -> service -> reply -> Server).
+  * ||ClientServer = (Client || Server)
+                      / {call/request, reply/wait}.
+
+- Client-/Server-Prozess (Variante)
+  * Client2 = (call.request -> call.reply -> continue -> Client2).
+  * Server2 = (accept.request -> service -> accept.reply -> Server2).
+  * ||ClientServer2 = (Client2 || Server2)
+                       / {call/accept}.
+
+- Aufgabe: Wie eines der vorigen Client-/Server-Modelle modifizieren, sodass mehr als ein Client,
+  den Dienst des Servers abrufen kann?
+
+- Verborgene Aktionen
+  * DEFINITION: Sei P ein beliebiger Prozess, so wird durch P\{a1, ..., an} ein Prozess definiert,
+    indem die Aktionen {a1, ..., an} aus Alphabet P verborgen werden ("\" heipt Hiding-Operator).
+    Verborgene Aktionen werden mit τ markiert und können nicht von nebenläufigen Prozessen gemeinsam
+    benutzt werden.
+
+  * Bemerkung: Sinn und Zweck von Verbergen von Aktionen:
+    - Zustände entfernen, die außerhalb des Prozesses nicht betrachtet werden sollen
+    - Komplexität reduzieren (Zustandsanzahl) in zusammengesetzten Prozessen.
+
+  * DEFINITION: Sei P ein beliebiger Prozess, dann wird durch P@{a1, ..., an} ein Prozess definiert,
+    indem alle Aktionen bis auf {a1, ..., an} verborgen werden (Interface-Operator).
+
+- Beispiel: Sei folgender Prozess gegeben:
+  * User = (anfordern -> benutzen -> freigeben -> User).
+
+  * So sind die wie folgt definierten Prozesse identisch:
+  * User \ {benutzen}
+  * User @ {anfordern, freigeben}
+
+- Strukturdiagramme
+  * Durch Zustandsdiagramme: - Dynamisches Verhalten von Prozessen beschreiben
+                             - In parallelen Komposition, geht Struktur der Komponenten verloren
+  * Durch Strukturdiagramme: - Kann man Struktur einer parallelen Komposition beschreiben
+
+- Strukturdiagramme (1)
+  * Prozess P mit Alphabet {a, b, x}:
+  * Prozess Q mit Alphabet {c, d, x}:
+
+- Strukturdiagramme (2)
+  * parallele Komposition (P||Q)/{m/a, m/c, b/d}:
+
+  * Zusammenfassung Diagramm:
+    - Synchronisierte Aktionen (wie a/c und b/d) müssen zusammen ablaufen, und der gemeinsame Name
+      (entweder ein neuer oder einer der ursprünglichen Namen) hilft, die gemeinsame Natur der Aktion kennzuzeichnen
+    - Unabhängige Aktionen (wie x) können in beiden Prozessen vorkommen, ohne dass sie synchronisiert werden müssen.
+      Die Linie hier dient nur zur Veranschaulichung, dass es die gleiche Aktion ist.
+
+- Strukturdiagramme (3)
+  * parallele Komposition ||S = (P||Q)@{x, y}:
+
+  * Zusammenfassung Diagramm:
+    - P und Q laufen parallel innerhalb des Prozesses S
+    - a ist eine interne Aktion, nur innerhalb von S synchronisiert, nicht nach außen sichtbar
+    - x und y sind Schnittstellenaktionen des gesamten Prozesses S, zugänglich für externe Beobachter
+
+- Strukturdiagramme (4)
+  * Doppelpuffer:
+
+  * range T=0..3
+  * Puffer = (in[i:T] -> out[i] -> Puffer).
+  * ||DoppelPuffer = (a:Puffer || b:Puffer)
+                      / {a.out/b.in, in/a.in, out/b.out}.
+
+- Strukturdiagramme (5)
+  * Client-/Server-Prozess:
+
+  * Client = (call -> wait -> continue -> Client).
+  * Server = (request -> service -> reply -> Server).
+  * ||ClientServer = (Client || Server)
+                      /{call/request, reply/wait}
+________________________________________________________________________________________________
+    4 Nebenläufigkeit in Java
+Bisher:
+- Nebenläufigkeit bisher nur im Modell betrachtet (parallele Komposition in FSP).
+- Interaktionen zwischen nebenläufigen Prozessen erfolgte durch gemeinsame (unteilbare) Aktionen,
+- Mögliche Traces umfassen alle Kombinationen der Ausführung von Aktionen aus parallelen Prozessen.
+  Dabei werden berücksichtigt: gemeinsame als auch nicht-gemeinsame Aktionen
+
+Jetzt:
+- Nebenläufigkeit in Java fomulieren
+- Fragen:
+    1. Was entspricht der parallelen Komposition?
+    2. Was entspricht der unteilbaren gemeinsamen Aktionen?
+
+Beispiel: "Schlossgarten"
+- Folgende Aufgabe in Java durch nebenläufige Prozesse/Threads realisieren:
+-> Ein Schlossgarten durch eines von zwei Toren betreten
+-> Tore sind unabhängig voneinander (jedes Tor als Thread realisieren;
+   Vereinfachung: Durch jedes Tor kommen genau N Besucher)
+-> Es gibt einen zentralen Zähler:
+   Sobald ein Besucher ein Tor durchquert, wird er durch Tore hochgezählt.
+-> jedes Tor besitzt ebenfalls einen lokalen Zähler
+
+Zählerimplementierung: 1. Versuch (a)
+- Wie könnte Implementierung aussehen?
+public class Counter{
+    private int value;  // aktueller Zaehlerstand
+    public Counter() { value = 0; }
+
+    public void incrementValue(){
+        int temp = value + 1;
+        value = temp;
+        // Kurzform "value++" wird intern auch so gelöst
+    }
+
+    public in getValue() {
+        return value;
+    }
+}
+
+- Bemerkung: Reihenfolge der Anweisungen mehrerer Threads (nebenläufiger Prozesse) ist nicht
+  vorhersehbar => kann zu Race Conditions führen.
+- Bemerkung: incrementValue() ist nicht atomar; es kann unterbrochen werden - bedeutet:
+  Threads können Zustand verändern, bevor Methode abgeschlossen ist.
+  Das macht Implementierung bei paralleler Ausführung fehleranfällig.
+- Frage: Was kann dadurch passieren? -> siehe später Eingangsbeispiel
+- Modifikation: Wahrscheinlichkeit, ein Thread während Ausführung von incrementValue() zu unterbrechen,
+  soll künstlich erhöht werden. Hierdurch soll Effekte von Race Conditions
+  (z.B. falsche Werte durch parallele Zugriffe) besser sichtbar zu machen.
+  Die Logik der Methode selbst bleibt unverändert.
+
+public class VL_04_01_Counter {
+    private int value;  // aktueller Zaehlerstand
+
+    public VL_04_01_Counter() {
+        value = 0;
+    }
+
+    public void incrementValue() {
+        int temp = value + 1;
+        {   // eventuell Prozesswechsel vornehmen
+            try {
+                if (Math.random() < 0.5)
+                    Thread.yield(); // Thread.sleep(1);
+            } catch (Exception e) {
+            }
+        }
+        value = temp;
+        // Kurzform "value++" wird intern auch so aufgelöst
+    }
+
+    public int getValue() {
+        return value;
+    }
+}
+
+Mainmethode
+    public static void main(String[] args) {
+        VL_04_01_Counter firstCounter = new VL_04_01_Counter();
+        VL_04_02_Gate east = new VL_04_02_Gate("Osten", firstCounter);
+        VL_04_02_Gate west = new VL_04_02_Gate("Westen", firstCounter);
+        east.start();
+        west.start(); // jetzt laufen drei Threads!
+
+        // auf Beendigung der Gate-Threads warten
+        try {
+            east.join();
+            west.join();
+        } catch (Exception e) {
+            System.out.println(">>> Exception: " + e);
+        }
+
+        // Zaehlerstaende ausgeben
+        System.out.println();
+        System.out.println(east.getName() + ": lokal " + east.getLocalValue() + " Besucher gezaehlt.");
+        System.out.println(west.getName() + ": lokal " + west.getLocalValue() + " Besucher gezaehlt.");
+        System.out.println("Zaehler: global " + firstCounter.getValue() + " Besucher gezaehlt.");
+    }
+
+Ausgabe:
+> java Garden
+Tor "Osten": oeffne...
+Tor "Westen": oeffne...
+Tor "Osten": schliesse.
+Tor "Westen": schliesse.
+Tor "Osten": lokal 20 Besucher gezaehlt.
+Tor "Westen": lokal 20 Besucher gezaehlt.
+Zaehler: global 28 Besucher gezaehlt.
+
+Selbstanalyse:
+- Nicht-atomare Operation in incrementValue(): incrementValue() enthält:
+  int temp = value + 1;
+  if(Math.random() < 0.5)
+    Thread.yield();
+  value = temp;
+- Zähler wird in zwei Schritten aktualisiert:
+  1) Aktueller Wert wird um 1 erhöht
+  2) Neuer Wert wird in value von temp zurückgeschrieben
+- Zwischen den beiden Schritten kann ein Prozesswechsel geschehen
+=> Es kann bei globalCounter zu Race Conditions führen, da incrementValue() nicht atomar ist.
+* A liest value = 10 => berechnet temp = 11
+* Prozesswechsel zu B
+* B liest value = 10 => berechnet temp = 11
+* A setzt fort und schreibt ebenfalls value = 11 => Dadurch geht ein Besucher verloren.
+
+- Fakt: Bei incrementValue() gehen Zählimpulse verloren
+- Warum: Methodenaufrufe in Java sind nicht atomar. Ausführung kann jederzeit unterbrochen werden,
+  und zu einem späteren Zeitpunkt fortgesetzt werden. In der Zwischenzeit kann ein anderer Prozess
+  den Wert des gemeinsamen Zählers verändern. Ein möglicher Trace, die zu einem falschen Zählstand führt
+  (value innerhalb des gemeinsamen Zählers habe den Wert n).
+  - Tor Osten führt incrementValue() aus, liest value, weist tmp Wert n + 1.
+  - Tor Osten führt yield() bzw. sleep() aus.
+  - Tor Westen führt incrementValue() aus, liest value, weist tmp Wert n + 1.
+  - Tor Westen initialisiert value mit tmp (n + 1), beendet dann incrementValue().
+  - Tor Westen initialisiert value mit tmp (auch n + 1), beendet dann incrementValue().
+- globalCounter hat nun n + 1, obwohl incrementValue() zweimal ausgeführt wurde (globalCounter müsste 2 * (n + 1)) ausführen).
+  (Es sind auch Traces mit korrekten Zählerstanden möglich).
+
+- Bezeichnung: Nicht vorhersehbare, durch unkontrolliertem Zugriff auf gemeinsame Variable, werden als
+  "Inteferenz" oder "Race Hazard" bezeichnet.
+
+- Frage: Wie kann man Inteferenzen oder Race Hazards vermeiden?
+  => Sicherstellen, dass zurzeit nur ein Prozess eine Anweisungsfolge ausführt,
+  indem eine gemeinsame Variable manipuliert wird (gegenseitiger Ausschluss).
+  => Hierdurch ist die Anweisungsfolge unteilbar (atomar).
+  Wie das in Java umsetzen?
+
+4.1 Gegenseitiger Ausschluss in Java
+Gegenseitiger Ausschluss wird in Java durch Schlüsselwort "synchronized" realisiert:
+- Jedes Java-Objekt hat eine Art "Türschloss" (Lock), das andere Threads daran hindert,
+  gleichzeitig auf das Objekt zuzugreifen.
+- Wenn ein Thread den Codeblock in synchronized (obj) ausführt, überprüft Java, ob das Schloss (Lock)
+  für obj frei ist.
+- Ist der Schloss des Objekts frei, sperrt der Thread das Schloss,
+  führt den Code aus und gibt es danach wieder frei.
+- Ist der Schloss des Objekts nicht frei, sondern durch einen anderen Thread gesperrt,
+  muss der aktuelle Thread warten, bis das Schloss freigegeben wird.
+  Dieser Zustand wird "Auschluss-Wartemenge" genannt.
+- Wenn mehrere Threads gleichzeitig auf ein Schloss warten, wählt Java zufällig
+  (nicht-deterministisch) aus, welcher Thread als Nächstes den Zugriff erhält.
+=> Kurz: Nur ein Thread kann auf einen synchronized-Block zugrifen, der an dasselbe Objekt gekoppelt ist.
+   Andere Threads müssen warten, bis der aktuelle Thread fertig ist. Java entscheidet, welcher wartende Thread
+   als Nächstes an die Reihe kommt, wenn mehrere Threads warten.
+
+Gegenseitiger Ausschluss bei Methoden
+- Der Methodendeklaration kann synchronized vorangestellt werden:
+  public synchronized void foo(){
+    ...Methodenrumpf
+  }
+- Nur ein Thread kann eine synchronized-Methode gleichzeitig ausführen, da das Objekt automatisch gesperrt wird.
+  entspricht: synchronized (this) {Methodenrumpf}
+
+Bemerkung
+- Auch Klassenmethoden mit synchronized kennzeichnen
+  public static synchronized void foo() { ... }
+- Zugehöriges Lock bei einer static synchronized-Methode ist auf Klassen-Objekt der betreffenden Klasse,
+  angesiedelt, das von JVM automatisch beim Laden der Klasse erstellt wird.
+
+Zählerimplementierung: 2. Versuch
+package vl;
+
+public class VL_04_03_GoodCounter extends VL_04_01_Counter {
+    public synchronized void incrementValue() {
+        super.incrementValue();
+    }
+
+    public synchronized int getValue() {
+        return super.getValue();
+    }
+}
+
+- Klasse Counter wird durch neue Klasse GoodCounter erweitert. Hierin wird die fehleranfällige Methode
+  incrementValue() durch synchronisierte Methode überschrieben
+- Dieser Zähler liefert korrekte Ausgabe:
+
+Tor "Westen": oeffne...
+Tor "Osten": oeffne...
+Tor "Westen": schliesse.
+Tor "Osten": schliesse.
+
+Tor "Osten": lokal 20 Besucher gezaehlt.
+Tor "Westen": lokal 20 Besucher gezaehlt.
+Zaehler: global 40 Besucher gezaehlt.
+
+Rekursive Locks
+
+class Counter {
+    private int value;
+    ...
+    public synchronized void increment() { value+= 1; }
+    public synchronized void increment(int n) {
+        if(n > 0){
+            increment();    // einmal hochzaehlen
+            increment(n - 1);   // rekursiv noch (n - 1)-mal
+        }
+    }
+}
+- Ein Thread, der Lock auf ein Objekt besitzt, kann weiterhin andere synchronized-Methoden oder Anweisungen
+  auf diesem Objekt ausführen, ohne blockiert zu werden. Der Thread darf quasi denselben Lock so oft verwenden,
+  wie nötig, auch wenn das rekursiv passiert.
+
+  Im obigen Beispiel kann Methode increment(int n), die Methode increment() aufrufen, weil beide denselben Lock
+  nutzen und der Thread diesen bereits besitzt.
+
+Modellierung des Schlossgartens in FSP
+- Ziele:
+-> Falsche und korrekte Java-Implementierung von Schlossgartenzähler in FSP modellieren
+-> durch Einsatz des Analysetools beliebige Traces durchspielen, oder
+-> automatisch Abwesenheit von Interferenzen festellten, oder
+-> automatisch einen Trace finden, der zu Race Hazards im globalen Zähler führt.
+
+Im Modell verwendete Bezeichner
+- Counter: modelliert globalen Zähler
+- Gate: modelliert Tor, einschließlich Zugriff auf globalen Zähler
+- Display: Anzeige bzw. Abruf des globalen Zählerstandes
+- Garden: parallele Komposition bestehend aus zwei Toren, dem globalen Zähler und der Anzeige
+
+Schlossgartenmodell
+const N = 3 // maximale Anzahl Besucher
+range T = 0..N  // Wertebereich fuer Zaehler (zyklisch)
+
+Counter      = Counter[0],
+Counter[u:T] = (read[u] -> Counter[u]
+               | write[v:T] -> Counter[v]).
+Gate      = (start -> Run),
+Run       = (arrive -> Increment
+            | end -> Gate),
+Increment = (read[x:T] -> write[(x+1) % (N+1)] -> Run).
+Display = (read[T] -> Display)
+          + {write[T]}.
+||Garden = (east:Gate || west:Gate  || display:Display
+            || {east, west, display}::Counter)
+            / { start, / {east, west}.start,
+                end / {east, west}.end }.
+Bemerkung:
+- Frage: Was passiert, wenn im Display, Erweiterung des Alphabets um + write[T] weggelassen wird?
+- Hinweis: Betrachte im Gesamtprozess Garden, die Ausführbarkeit der Aktionen display.write.{N}
+  (z.B. unter Verwendung des Animators).
+
+Automatisches Auffinden von Race Hazards
+- Modell wird um Test-Prozess erweitert, der nach Ablauf von end-Aktion, Zählerstand prüft
+  und im Fehlerfall den ERROR-Zustand annimmt.
+- Mögliches Erreichen von ERROR-Zustands kann durch Analysetool getestet werden.
+
+Schlossgartenmodell + autom. Test
+...
+Test = Test[0], // zaehle explizit mit!
+Test[v:T] = (when (v < N)
+{east.arrive,west.arrive} -> Test[v+1]
+| when (v == N) end -> Check[v]),
+Check[v:T] = (display.read[u:T] ->
+(when (u == v) right -> Test[v]
+|when (u != v) wrong -> ERROR)
+).
+||Testgarden = (Garden || Test).
+
+Überlegungen zum korrekten Modell
+- Frage: Wie sieht Modell zum korrekten Java-Programm aus bzw. wie modelliert man durch synchronized erzwungene
+  Lock-Mechanismus?
+- Antwort: vgl. voriges FSP-Beispiel zum gegenseitigen Ausschluss!
+- Überall vo auf globalen Zähler zugegriffen wird - auch beim Leben(!) -,
+  wird Zugriff durch gegenseitigen Ausschluss geregelt.
+
+Korrektes Schlossgartenmodell
+const N = 3
+range T = 0..N // Wertebereich fuer Zaehler (zyklisch)
+Counter = Counter[0],
+Counter[u:T] = (read[u] -> Counter[u]
+               | write[v:T] -> Counter[v]).
+Lock = (acquire -> release -> Lock).
+||LockedCounter = (Lock || Counter).
+
+Gate = (start -> Run),
+Run  = (arrive -> Increment
+       | end -> Gate),
+Increment = (acquire -> read[x:T] -> write[(x+1) % (N+1)]
+            -> release -> Run).
+Display = (acquire -> read[T] -> release -> Display)
+            + {write[T]}.
+||Garden = (east:Gate   || west:Gate    || display:Display
+            || {east, west, display}::LockedCounter)
+            / { start / {east, west}.start,
+                end / {east west}.end }.
+Test = Test[0],
+Test[v:T]   = (when (v < N)
+                    {east.arrive, west.arrive} -> Test[v+1]
+              | when (v == N) end -> Check[v]),
+Check[v:T] = (display.acquire -> display.read[u:T]
+                -> display.release
+                -> (when (u == v) right -> Test[v]
+                    |when (u != v) wrong -> ERROR)  ).
+||Testgarden = (Garden || Test).
+
+Fazit
+- Race Hazards entstehen durch nicht steuerbare Einflüsse: Sie passieren wegen zeitlicher Abläufe,
+  die der Programmierer nicht direkt kontrollieren kann.
+- Race Hazards lassen sich nicht durch Testen finden: Tests decken sie nicht auf,
+  weil sie von zufälligen Abläufen abhängen.
+- Debugger können Race Hazards nicht aufspüren: Debugger sind für einfache, vorhersehbare Fehler gedacht.
+  Sie können die zeitlichen Probleme von Race Hazards nicht erkennen.
+- Nur formale Methoden können Race Hazards sicher ausschließen: Man kann nur mit speziellen Tools
+  wie "Model Checkern" beweisen, dass ein Programm keine Race Hazards hat.
+- Einfache Programme sind leichter zu überprüfen: Je einfacher der Code, desto weniger sind Fehlerquellen
+  und desto leichter ist die Verifizierung.
+
+4.2 Monitore
+- Monitore: allgemeines Synchronisationskonzept für nebenläufige Prozesse
+  Es ist wie ein "Wächter", der sicherstellt, dass nur ein Thread auf geschützte Daten zugreift
+- Daten im Monitor können nur über spezielle Methoden (Prozeduren) geändert geändert werden, nicht direkt
+- Nur ein Thread/Prozess darf eine Methode des Monitors eines Monitors zurzeit ausführen
+- Ausführung kann an Bedingung geknüpft sein (z.B. "Warte, bis ein anderer Thread fertig ist").
+- Übergeordneter Instanz (Laufzeit-, Betriebssystem) regelt, welcher Thread/Prozess eine Methode ausführen darf.
+
+Monitore in Java
+- Monitorkonzept ist Bestandteil von Java
+- Java unterstützt Monitore von Haus aus: JVM verwaltet Monitore und ihre Sperrmechanismus (Locks)
+- Wie funktionieren Monitore in Java: Monitore werden in Java durch Klassen implementiert
+    -> Daten, die geschützt werden sollen, sind privat (private) in einer Klasse
+    -> Methoden, die auf diese Daten zugreifen, sind synchronisiert (synchronized).
+        - Nur ein Thread kann eine solche Methode gleichzeitig ausführen.
+    -> Beispiel: Implementierung von GoodCounter bzw. rekursives Beispiel von Counter im Schlossgarten
+
+Beispiel: Parkplatz
+- Der Parkplatz hat N Stellplätze,
+- Wenn Plätze frei sind, darf Aktion "parken" über "Zufahrt" ausgeführt werden,
+- Wenn Plätze belegt sind, darf Aktion "wegfahren" über Ausfahrt ausgeführt werden
+Wie sieht eine Modellierung der beteiligten Prozesse aus?
+
+Parkplatzmodellierung in LTS (1)
+/* Parkplatz */
+ParkKontrolle(N=3) = FreiePlatze[N],
+FreiePlaetze[i:0..N] = (when (i > 0) parken -> FreiePlaetze[i - 1]
+                       |when (i < N) wegfahren -> FreiePlaetze[i + 1]).
+Zufahrt = (parken -> Zufahr).
+Ausfahrt = (wegfahren -> Ausfahrt).
+||Parkplatz = (Zufahrt || Ausfahrt || ParkKontrolle(4)).
+
+ParkplatzImplementierung in Java (1)
+
+package vl;
+
+public class VL_04_04_ParkKontrolle {
+    public int N = 3;
+    private int freiePlaetze = N;
+
+    public VL_04_04_ParkKontrolle() {
+    }
+
+    public synchronized void parken() {
+        --freiePlaetze;
+    }
+
+    public synchronized void wegfahren() {
+        ++freiePlaetze;
+    }
+}
+
+- Monitor ist o.k., aber was mit bewachten Aktionen?
+
+... (when (i > 0) ...
+... (when (i < N) ...
+
+- Parken erlaubt, wenn noch freie Plätze vorhanden
+- Wegfahren möglich, wenn mindestens ein Platz belegt
+- Wie das in Java implementieren?
+
+Parkplatzimplementierung in Java (2)
+
+public synchronized boolean erfolgreichGeparkt() {
+        if (freiePlaetze == 0)
+            return false;
+        else {
+            --freiePlaetze;
+            return true;
+        }
+}
+
+package vl;
+
+public class VL_04_05_Zufahrt extends Thread {
+    private VL_04_04_ParkKontrolle parkKontrolle;   // Anzahl einfahrende Fahrzeuge
+    private int n;
+
+    @Override
+    public void run() {
+        for (int i = 0; i < n; ++i) {
+            // i-tes Auto parken
+            boolean geparkt = false;
+            // solange versuchen, bis es geklappt hat
+            while (!geparkt) {
+                geparkt = parkKontrolle.erfolgreichGeparkt();
+            }
+        }
+    }
+}
+
+- ok, aber "aktives Warten/busy waiting/spinning" verbraucht unnötig Prozessorzeit!
+- Frage: Wie innerhalb des Monitors passiv auf Erfüllen einer Bedingung warten?
+- Jedem Java-Objekt neben "Lock" und "Ausschluss-Wartemenge" auch eine "Ereignis-Wartemenge"
+  zugeordnet. Darin können Threads auf Eintreten von Ereignissen warten. Threads können innerhalb von Monitor, passiv auf Bedingung warten, indem sie Methoden
+  wait(), notify() oder notifyAll() verwenden.
+
+  -> Ereignis-Wartemenge: Jeder Java-Objekt-Monitor hat eine Wartemenge, in der Threads warten,
+     bis ein Ereignis eintritt.
+
+  -> Nicht lauffähig: Ein wartender Thread wird nicht vom Prozessor ausgeführt, bis er durch
+     einen anderen Thread "befreit" wird.
+
+  -> Befreiung: Threads in der Wartemenge könenn durch notify() (einen Thread) oder
+     notifyAll() (alle wartenden Threads) aktiviert werden.
+
+Folgende Methoden können aufgerufen werden aus dem Objekt, das zum Monitor gehört:
+
+1. public final void wait(): Stoppt den aktuellen Thread, gibt den Monitor frei und lässt den Thread warten, bis er
+   von einem anderen Thread aufgeweckt wird.
+   - Thread verlässt Monitor, gibt den Monitor (Lock) frei.
+   - Wird in Ereignis-Wartemenge des Monitors eingereiht
+
+2. public final void notify(): Weckt einen wartenden Thread auf, damit er weiterarbeiten kann.
+   - Entfernt einen beliebigen Thread
+   - Versetzt ihn den Status "lauffähig" (d.h. er wartet jetzt wieder in Ausschluss-Wartemenge).
+
+3. public final void notifyAll(): Weckt alle wartenden Threads auf, damit sie weiterarbeiten können.
+   - Entfernt alle Threads aus Ereignis-Wartemenge
+   - Versetzt sie dne Status "lauffähig" (d.h. alle warten jetzt wieder in Ausschluss-Wartemenge).
+
+- Hinweis: Diese Methoden funktionieren nur, wenn aufrufender Thread bereits
+  Monitor des Objekts besitzt (z.B. innerhalb eines synchronized-Blocks).
+
+- Bemerkung: Thread, das per notify() oder notifyAll() aufgeweckt wurde, setzt seine Abarbeitung
+  direkt nach zuletzt ausgeführten wait() fort.
+
+- Bemerkung: Welcher Thread nach Ausführung von notify() oder notifyAll() als nächstes
+  über Lock Zugang zum Monitor hat, ist unbestimmt.
+
+- Bemerkung: Wenn ein Thread, der keine Kontrolle über Monitor des Objekts besitzt, Methoden
+  wait(), notify() oder notifyAll() aufruft, wird eine IllegalMonitorStateException geworfen.
+
+Realisierung bewachter (atomarer) Aktionen in Java
+- FSP:
+  Zustand1 = (when bedingung aktion -> Zustand2),
+
+- Java:
+  public synchronized void aktion() throws InterruptedException {
+        while(!bedingung) {
+            wait();
+        }
+        ... // Variablen aendern (Zustand2)
+        notifyAll();
+  }
+
+Umsetzungsregeln für bewachte Aktionen
+- Synchronisation: Bewachte Aktionen werden in synchronized-Methoden implementiert.
+- Warten auf Bedingung: Wenn eine Bedingung nicht erfüllt ist, wartet der Thread mit wait().
+- Änderungen mitteilen: Ändernungen des Zustands werden mit notifyAll() signalisiert, um
+  wartende Threads zu informieren.
+- notifyAll() ist der Standard. Nur in begründeten Ausnahmefällen darf notify() verwendet werden.
+
+public synchronized void parken() throws InterruptedException {
+    while (!(freiePlaetze > 0)) {
+        wait();
+    }
+    --freiePlaetze;
+    notifyAll();
+}
+
+public synchronized void wegfahren() throws InterruptedException {
+    while (!(freiePlaetze < N)) {
+        wait();
+    }
+    ++freiePlaetze;
+    notifyAll();
+}
+
+Übung: Bewerten Sie das folgende Beispiel
+public class Test{
+    private Object o = new Object();
+    private int i = 0, j = 0;   // gemeinsame benutzte Var.
+
+    public synchronized void foo(){
+        while(i != 42) { wait(); }
+        i = j;
+    }
+
+    public void bar(){
+        synchronized(o){
+            j = 7;
+            synchronized(this) { i = 42; }
+            notifyAll();
+        }
+    }
+}
+
+- Meine Überlegung:
+  Es gibt ja den Punkt: "Synchronisation: Bewachte Aktionen werden in synchronized-Methoden
+  implementiert." Das ist ja bereits erfüllt bei foo(). Bei bar() gibt es keine wachte Aktion,
+  deshalb ist synchronized darin auch nicht nötig. Es gibt aber auch keine.
+
+  Es gibt sonst den Punkt: "Warten auf Bedingung: Wenn eine Bedingung nicht erfüllt ist,
+  wartet der Thread mit wait()." Ich weiß in der while-Schleife von foo() nicht,
+  wie ich die Bedingung interpretieren soll. Es heißt, wenn die Bedingung nicht erfüllt ist,
+  dann soll wait()...
+
+  Aber was ist die Bedingung hier? Die Bedingung ist ja (i != 42).
+  Wenn die Bedingung (i != 42) nicht erfüllt ist, dann wait() ...
+
+  Wenn das aber nicht erfüllt geprüft werden soll,
+  dann muss geschrieben werden while (! (i != 42) ) ...
+
+  Die Nichterfüllung der Bedingung macht sich nicht durch i != 42, also Ungleichzeichen bemerktbar,
+  sodern (1 != 42)  ist die Bedingung, die es zu erfüllen gibt,
+  und die Nichterfüllung der Bedingung ist dann als while (! (i != 42) ) kennzuzeichnen,
+  denn "Warten auf Bedingung: Wenn eine Bedingung nicht erfüllt ist, wartet der Thread mit wait()."
+
+  Das ist also der erste Fehler, was die Umsetzungsregeln für bewachte Aktionen angeht.
+
+  Dannach wird geschrieben: i = j; Hier sollte, nachdem oben die Bedingung dann erfüllt ist,
+  eine Zustandsänderung stattfinden. Ich bekomme hierfür: Unreachable statement
+
+  Die Zustandsänderung sollte den Prozessen in der Ereignis-Wartemenge signalisiert werden,
+  also quasi per notifyAll(). Aber das fehlt hier, denn "Änderungen mitteilen:
+  Ändernungen des Zustands werden mit notifyAll() signalisiert, um wartende Threads zu informieren."
+
+  Ich weiß jedoch nicht, inwiefern bar() mit foo() zusammenhängt. Ich gehe davon aus, erst wenn bar()
+  ausgeführt wird, dann wird j mit 7 initialisiert (j = 7). j hat jetzt den Wert 7.
+  Zunächst wird i mit 42 initialisiert (i = 42). i hat jetzt den Wert 42.
+  Danach wird notifyAll() ausgeführt, um die Änderungen des Zustands den wartendenden Threads
+  mitzuteilen. Nachdem bar() ausgeführt wird, wird dann wahrscheinlich foo() ausgeführt.
+
+  Aber...
+
+  Dadurch, dass i jetzt den Wert 42 hat, ist bei foo() die Bedingung i != 42 nicht mehr erfüllt *,
+  denn jetzt ist i = 42, somit könnte man meinen, jetzt ist die Bedingung erfüllt,
+  und eine Zustandsänderung i = j kann erfolgen, und danach sollte dann notifyAll() ausgeführt werden.
+  Aber notifyAll() wurde ja davor in bar() ausgeführt, also quasi bevor dann nachher foo()
+  ausgeführt wurde und eine Zustandsänderung erfolgt wurde. Aber es sollte ja umgekehrt sein:
+  Erst erfolgt eine Zustandsänderung, dann ausführen von notifyAll().
+
+  * Somit erklärt sich, dass die eigentliche Bedingung auch (1 = 42) ist, und die Nichterfüllung
+  der Bedingung, und das Ausführen von wait(), solange die Nichterfüllung der Bedingung gilt,
+  der ist, dass (i != 42). Zufolgedessen lässt sich sagen, dass die Kennzeichnung einer
+  Nichterfüllung einer Bedingung nicht immer durch while (!(bedingung)) bemerktbar macht,
+  sowie im Beispiel ParkKontrolle while (! (plaetze > 0) ) oder unter Abschnitt
+  "Realisierung bewachter (atomarer) Aktionen in Java while (! bedingung) ..."
+
+- Lösung per ChatGPT (Zusammengefasst):
+  Positiv:
+  - foo() ist korrekt synchronisiert. Die Bedingung while (i != 42) ist richtig implementiert.
+    Sie stellt sicher, dass der Thread wartet, bis i == 42.
+    Die Nichterfüllung der Bedingung ist also i != 42.
+
+  - notifyAll() wird in bar() nach Zustandsänderung (i = 42; i = 7) korrekt aufgerufen,
+    um wartende Threads zu informieren.
+
+  Probleme:
+  - Es werden zwei Monitore (this und o) verwendet. Das kann zu Inkonsistenzen führen, da
+    foo() nur mit this arbeitet, während in bar() zum Teil Ändernugen auf o synchronisiert werden.
+
+  - In foo() fehlt ein notifyAll(), um nach Zustandsänderung i = j andere wartende Threads
+    zu benachrichtigen.
+
+  Lösungsvorschlag:
+  - Synchronisation und Zustandsänderung sollten nur per einem Monitor erfolgen (this).
+  - Nach Zustandsänderung in foo(), also nach i = 7, notifyAll() ausführen, um die Threads
+    über Zustandsänderung zu benachrichtigen.
+
+- Vorschlag zur Verbesserung:
+  public class Test{
+    private int i = 0, j = 0;   // gemeinsame Variablen
+
+    public synchronized void foo() throws InterruptedException{
+        while(i != 42){ wait(); }
+        i = j;  // Zustandsänderung erfolgt
+        notifyAll();    // Andere Threads über Zustandsänderung informieren
+    }
+
+    public synchronized void bar(){
+        j = 7;
+        i = 42;
+        notifyAll();    // Zustandsänderung abgeschlossen, Threads informieren.
+    }
+  }
+
+Beispiel: Beschränkte Puffer (Bounded Buffer): Ein Zwischenspeicher mit begrenzter Kapazität,
+der häufig in der Kommunikation zwischen Produzent (der Daten erzeugt) und Konsument (der Daten verarbeitet)
+verwendet wird.
+
+- Zweck:
+  -> kleine Datenmengen zwischenspeichern, meist in der Reihenfolge, in der sie eingehen
+  (FIFO: First In, First Out).
+  -> den Datenstrom zwischen Produzent und Konsument zu "glätten", falls der Produzent schneller
+  arbeitet als der Konsument oder umgekehrt.
+
+- Merkmal:
+  -> Produzent kann Daten in den Puffer schreiben, solange Platz vorhanden ist.
+  -> Konsument kann Daten aus Puffer lesen, solange Daten verfügbar sind.
+  -> Beide können gleichzeitig arbeiten (schreibend bzw. lesend auf Puffer zugreifen),
+     solange Synchronisation verwendet wird, um Konflikte zu vermeiden.
+
+Modellierung beschränkter Puffer: Daten werden im Puffer nur gespeichert, jedoch
+nicht verarbeitet/verändert. Es braucht nur die Logik des Puffers und des Zugriffs
+modelliert zu werden (ohne die Daten)!
+- Modellierung eines "Bounded Buffer" in FSP:
+Buffer(N=5) = Speicher[0],
+Speicher[i:0..N] = (when (i < N) put -> Speicher[i + 1]
+                   |when (i > 0) get -> Speicher[i - 1]).
+Produzent = (put -> Produzent).
+Konsument = (get -> Konsument).
+||BoundedBuffer = (Produzent || Buffer(5) || Konsument).
+
+Zustandsdiagramm beschränkter Puffer
+- Bemerkung: Zustandsdiagramm des beschränkten Puffers hat starke Ähnlichkeit
+  mit Modellierung des Parkplatzes.
+- Bemerkung: Aber, hier ist Ausgabereihenfolge wesentlich (zwar nicht modelliert,
+  aber bei Implementierung zu beachten)!
+
+Implementierung beschränkter Puffer in Java
+
+package vl;
+
+public class VL_04_06_BoundedBuffer<E> {
+    private final E[] speicher;
+    private int rein = 0,   // nächster Schreibindex
+            raus = 0,   // nächster Leseindex
+            count = 0;  // Belegungszähler
+    private final int size;
+
+    public VL_04_06_BoundedBuffer(int size) {
+        this.size = size;
+        speicher = (E[]) new Object[size];
+    }
+
+
+    public synchronized void put(E object) throws InterruptedException {
+        while (!(count < size)) wait();    // count == size
+        speicher[rein] = object;
+        ++count;
+        rein = (rein + 1) % size;
+        notifyAll();
+    }
+
+    public synchronized E get() throws InterruptedException {
+        while (!(count > 0)) wait();     // count == 0
+        final E object = speicher[raus];
+        speicher[raus] = null;
+        --count;
+        raus = (raus + 1) % size;
+        notifyAll();
+        return object;
+    }
+
+}
+
+Aufgabe
+- Frage:
+  Ändert sich das Verhalten der vorgestellten Implementierung von BoundedBuffer, wenn dort
+  abweichend von den Umsetzungsregeln notifyAll() durch notify() ersetzt wird?
+
+  Antwort:
+  notify() weckt nur einen wartenden Thread auf. In einer Umgebung mit Produzenten- und Konsumenten
+  kann es passieren, dass der falsche Thread aufgeweckt wird.
+  Als Beispiel wird ein Produzent geweckt, obwohl der Puffer voll ist, und dieser Produzent bleibt
+  wieder in der Warteschlange hängen. Dieses Verhalten führt zu einem Deadlock,
+  da Threads nicht effizient miteinander arbeiten können.
+
+- Was kann z.B. beim Zusammenspiel mit einem Konsumenten und zwei Produzenten-Threads
+  und einem BoundedBuffer der Größe 1 passieren?
+
+  Antwort:
+  Bei Puffergröße 1 kann der Puffer immer nur ein Element speichern.
+  Wenn zwei Produzenten und ein Konsument beteiligt sind, wird passieren,
+  dass der erste Produzent den Puffer füllt und notify() aufruft.
+  Es ist möglich, dass der zweite Produzent anstelle des Konsumenten geweckt wird, obwohl der Puffer bereits voll ist.
+  Der zweite Produzent kann nichts einfügen, da der Puffer voll ist, und wird wieder blockiert.
+  Der Konsument bleibt jedoch blockiert, da er nicht geweckt wurde. Dies führt zu einem Stillstand (Deadlock).
+
+- Lässt sich diese Beobachtung auf Puffer beliebiger Größe verallgemeinern?
+
+  Antwort:
+  Das Problem bleibt auch bei größeren Puffergrößen bestehen. Wenn mehrere Threads gleichzeitig auf den Puffer zugreifen,
+  kann notify() nicht garantieren, dass der richtige Thread geweckt wird. Ein falscher Thread
+  (z.B. ein Produzent bei vollem Puffer oder ein Konsument bei leerem Puffer) wird geweckt und das System kann in einen
+  ineffizienten Zustand oder Deadlock geraten.
+
+Aufgabenblatt 6
+6.1
+
+b) Kann in diesem konreten Programm die Anweisung notifyAll() gefahrlos durch notify() ersetzt werden? Warum?
+- notify() ist nicht geeignet, da es nicht sicherstellt, dass der richtige Thread aufgeweckt wird.
+  Dies kann zu Deadlocks oder ineffizientem Verhalten führen.
+- notifyAll() ist notwendig, um alle wartenden Threads zu benachrichtigen. Jeder Thread prüft dann seine Bedingung und handelt dementsprechend.
+- In Programmen wie diesem, mit mehreren unterschiedlichen Bedingungen (z.B. freiePlaetze > 0 und freiePlaetze < N), sollte immer
+  notifyAll() verwendet werden.
+
+b) Was passiert, wenn die Anzahl der einfahrenden und die der ausfahrenden Fahrzeuge nicht übereinstimmen?
+- Dann bleibt die Simulation irgendwann hängen:
+1. Mehr Einfahrten: Parkplatz wird voll, Zufahrts-Threads blockieren dauerhaft.
+2. Mehr Ausfahrten: Parkplatz wird leer, Ausfahrts-Threads blockieren dauerhaft.
+- Das Programm benötigt in solchen Fällen zusätzliche Logik, um den Zustand auszugleichen, beispielsweise:
+  Einschränkung der Einfahrten/Ausfahrten: Es dürfen nur so viele Fahrzeuge einfahren wie ausfahren (oder umgekehrt).
+  Behandlung von Ausnahmen: Wenn eine Bedingung blockiert wird, dann Warnung oder Fehler ausgeben.
+
+6.2 ... Wie wirken sich die folgenden Änderungen dieser Programmzeile auf die Programmlogik aus?
+a) while (!wächter) wait(99);
+Bewirkt, dass der Thread für 99 Millisekunden wartet, anstatt unbegrenzt, bis ein notify() oder notifyAll() ihn weckt.
+Der Thread wird nach spätestens 99 Millisekunden wieder lauffähig, auch wenn keine Änderungen in der Bedingung "Wächter" eingetreten ist.
+Der Thread überprüft die Bedingung erneut in der Schleife. Problem dabei ist, dass die CPU-Last erhöht wird, da der Thread häufiger
+aufgeweckt wird, auch wenn keine relevanten Änderungen stattgefunden haben (unnötiges aktives Warten).
+Fazit: Verhalten bleibt korrekt, ist jedoch ineffizient, da der Thread durch das unnötige Aufwachen die CPU stärker belastet.
+
+b) while (!wächter) sleep(99);
+Bewirkt, dass der Thread für 99 Millisekunden gestoppt wird, bevor die Bedingung erneut geprüft wird.
+Zwischen wait() und sleep() gibt es keinen Zusammenhang. sleep() gibt nicht den Monitor (Lock) frei. Andere Threads können daher nicht
+auf die gemeinsame Ressource zugreifen, da der blockierende Thread den Monitor hält. Deadlocks oder Blockierungen sind möglich,
+da andere Threads, die notify() oder notifyAll() aufrufen können, blockiert werden.
+Fazit: Verwendung von sleep() ist in diesem Kontext ungeeignet, da der Monitor nicht freigegeben wird, und kann zu Deadlocks führen.
+
+c) while (!wächter) yield();
+Bewirkt, dass dem Scheduler signalisiert wird, dass der aktuelle Thread seine CPU-Zeit freiwillig abgeben möchte.
+Zwischen wait() und yield() gibt es keinen Zusammenhang. sleep() gibt den Monitor (Lock) nicht frei. Andere Threads haben keine Möglichkeit,
+die Ressource zu nutzen oder die Bedingung "Wächter" zu ändern. Dies führt zu ineffizientem Verhalten und potenziellen Blockierungen,
+insbesondere in Multi-Thread-Szenarien.
+Fazit: Die Verwendung von yield() ist ebenfalls ungeeignet, da der Monitor nicht freigegeben wird, und führt zu ineffizientem Verhalten.
+
+d) if (!wächter) wait();
+Bewirkt, dass die Schleife durch eine einfache Bedingung (if) ersetzt wird. Der Thread ruft wait() nur einmal auf,
+wenn die Bedingung "Wächter" nicht erfüllt ist. Wenn der Thread nach wait() aufgeweckt wird, prüft er die Bedingung nicht erneut.
+Dies kann problematisch sein, wenn mehrere Threads die Ressource nutzen und die Bedingung "Wächter" durch andere Threads ungültig wird,
+bevor der aufgeweckte Thread wieder ausgeführt wird (sogenannte spurious wakeups). Programmlogik ist nicht mehr korrekt, da die Bedingung
+möglicherweise nicht mehr erfüllt ist, wenn der Thread fortführt.
+Fazit: Diese Änderung ist inkorrekt, da Bedingung "Wächter" nach wait() immer erneut geprüft werden muss, um sicherstellen,
+dass sie noch gültig ist.
+
+Zusammenfassung und Auswirkungen
+a) wait(99);                -> Korrekt, aber ineffizient durch häufiges Aufwachen
+b) sleep(99);               -> Monitor wird nicht freigegeben => Deadlocks möglich
+c) yield();                 -> Monitor wird nicht freigegeben => ineffizient/blockiert
+d) if(!wächter) wait();     -> Spurious wakeups führen zu inkorrektem Verhalten.
+Empfehlung: Ursprüngliche Schleife while (!wächter) wait(); sollte unverändert bleiben, da sie korrekten und effizienten
+Zugriff auf den Monitor und Bedingung sicherstellt.
+
+6.3
+
+const M = 5
+set K = {a, b, c}
+Kannibale = (gehEssen -> binZufrieden -> Kannibale).
+Koch = (koche -> fuelleBueffet -> Koch).
+Buffet = Speicher[M],
+Speicher[i:0..M] = (
+	 when (i > 0) essen -> Speicher[i - 1]
+	|when (i == 0) auffuellen -> Speicher[M]
+).
+||Kannibalenspeisung = (Koch || Buffet || forall[k:K] Kannibale(k)).
+
+4.3 Semaphore
+- Semaphore: Ein einfaches Synchronisationskonzept für nebenläufige Prozesse ("Semaphor: Signalmast")
+- Wurden von Dijkstra 1968 eingeführt
+- Im Unterschied zu Monitoren: Keine zentrale Instanz, die kritische Regionen einer Anwendung überwacht
+- Ein Semaphor ist eine Variable mit ganzzahligem, nicht-negativem Wertebereich
+- Nach Initialisierung der Variable, sind nur die Operationen up (V) und down (P) erlaubt:
+  -> up: Eine atomare Operation, die den Wert des Semaphors um eins hochzählt
+  -> down: Eine atomare Operation, die den Wert des Semaphors um eins herunterzählt,
+     sofern der Wert vorher > 0 ist; andernfalls wird der Prozess blockiert
+- Semaphore können genutzt werden, um den gegenseitigen Ausschluss (Mutual Exclusion) zu realisieren.
+  Für diesen Zweck werden sie auch als Mutex bezeichnet.
+
+Modellierung von Semaphoren
+- Um Semaphore besser analysieren zu können, werden sie zunächst in FSP modelliert:
+  const Max = 3
+  range Int = 0..Max
+  Semaphor(N=0) = Sema[N],
+  Sema[i:Int]   = (up -> Sema[i + 1]
+                    |when (i > 0) down -> Sema[i - 1]).
+
+Gegenseitiger Ausschluss mit Semaphoren
+- Nur ein Prozess zurzeit darf einen sogenannten kritischen Bereich betreten:
+  const Max = 3
+  range Int = 0..Max
+  Semaphor(N=0) = Sema[N],
+  Sema[i:Int]   = (up -> Sema[i + 1]
+                    |when (i > 0) down -> Sema[i - 1]).
+  Loop = (mutex.down -> critical -> mutex.up -> Loop).
+  ||SemaDemo = (p[1..3]:Loop || p[1..3]::mutex:Semaphor(1)).
+
+Zeitlicher Ablauf
+1. Der Semaphore wird mit Wert 1 initialisiert. Dadurch darf nur ein Prozess gleichzeitig den kritischen Bereich betreten.
+2. Ein Prozess, der den kritischen Bereich betreten möchte, führt mutex.down aus, wodurch der Wert des Semaphors
+   auf 0 reduziert wird und andere Prozesse blockiert werden.
+3. Nach Verlassen des kritischen Bereichs führt der Prozess mutex.up aus, um den Semaphore wieder freizugeben
+   und anderen Prozessen den Eintritt zu erlauben.
+
+   Korrekt angewendet, wird der Wertebereich des Semaphors nicht verletzt (mit LTSA verifiziert).
+
+Semaphore in Java
+- Semaphore als Monitor:
+  Semaphore lassen sich in Java durch die Verwendung des Monitor-Konzepts leicht umsetzen.
+  Ein Monitor ist eine Synchronisationshilfe, die den Zugriff auf gemeinsam genutzte Ressourcen kontrolliert.
+
+- Interner Zähler:
+  Jeder Semaphore besitzt einen internen Zähler (private int wert), der den aktuellen Zustand des Semaphors repräsentiert
+  (z.B. ob ein kritischer Bereich betreten werden darf).
+
+- Synchronisierte Methoden:
+  Die beiden Operationen up() und down() werden durch synchronisierte Methoden realisiert:
+  -> up(): Erhöht Zählerwert atomar um eins und ruft notifyAll(), um wartende Threads aufzuwecken.
+  Es wird kein wait() benötigt, da es keinen Wächter gibt.
+  -> down(): Wartet durch wait(), wenn Zähler <= 0 iat. Sobald Zähler > 0 ist, wird er um eins dekrementiert
+  und danach ebenfalls notifyAll() aufgerufen.
+
+package vl;
+
+public class VL_06_07_Semaphor {
+    private int wert;
+
+    public VL_06_07_Semaphor(int initial) {
+        this.wert = initial;
+        // Initialisierung: Ein Semaphor wird mit einem Startwert initialisiert. Dieser Wert bestimmt,
+        // wie viele Threads den kritischen Bereich betreten dürfen.
+    }
+
+    // Synchronisation: Beide Methoden up() und down() sind synchronisiert, wodurch sichergestellt wird, dass nur
+    // ein Thread zur gleichen Zeit auf die Semaphore-Variable zugreifen kann.
+    public synchronized void up() {
+        // FSP: up -> Sema[i + 1]
+        // kein Wächter, daher hier auch kein wait
+        ++wert;
+        notifyAll();
+    }
+
+    public synchronized void down() throws InterruptedException {
+        // FSP: when (i > 0) down -> Sema[i - 1]
+        while (!(wert > 0)) {
+            wait();
+        }
+        --wert;
+        notifyAll();
+    }
+
+    // Verwendung von wait() und notifyAll():
+    // wait() wird verwendet, um Threads anzuhalten, wenn der Zähler <= 0 ist.
+    // notifyAll() wird aufgerufen, um alle wartenden Threads zu benachrichtigen, dass sich der Zustand der Semaphore
+    // geändert hat.
+
+    // Diese Implementierung: Entspricht FSP-Beschreibung von Semaphoren und ermöglicht
+    // gegenseitigen Ausschluss (Mutex) für kritische Bereiche
+}
+
+Semaphore in Java ab Version 1.5
+- Ab V1.5 sind Semaphore in Java auch direkt impelemtiert!
+- Klasse java.util.concurrent.Semaphore:
+  -> Konstruktor: Semaphore(int permits) erzeugt Semaphor mit Initialwert permits
+  -> Methode public void acquire() implementiert die down-Operation
+  -> Methode public void release() implementiert up-Operation
+  -> weitere Methode siehe API ...
+
+Beispiel(1): Schlossgarten mit Semaphor
+- Zentrale Stelle der Implementierung ist die Instanz der Klasse Counter, die von allen nebenläufigen
+  Threads gemeinsam benutzt wird.
+- Beim Zugriff auf den Zähler gegenseitigen Ausschluss sicherstellen ("kritischer Bereich").
+
+package vl;
+
+public class VL_04_08_Counter { // ist kein Monitor mehr!
+    private int value;  // aktueller Zaehlerstand
+    // nur ein Prozess darf den Zähler manipulieren
+    private VL_04_07_Semaphor semaphor = new VL_04_07_Semaphor(1);
+
+    // Instanziieren findet nur von einem Thread statt, ist also unkritisch
+    public VL_04_08_Counter() {
+        value = 0;
+    }
+
+    // Gegensetiger Ausschluss für das Hochzählen
+    public void incrementValue() throws InterruptedException {   // nicht synchronized!
+        semaphor.down();
+        // kritischer Bereich
+        int temp = value + 1;
+        value = temp;
+        semaphor.up();
+    }
+
+    // Gegenseitiger Ausschluss auch für das Lesen
+    public int getValue() throws InterruptedException { // nicht synchronized!
+        semaphor.down();
+        // kritischer Bereich
+        int temp = value;
+        semaphor.up();
+        return temp;
+    }
+}
+
+Beispiel(2): Parkplatz mit Semaphor
+- Zentrale Stelle ist die Implementierung der ParkKontrolle, die von allen Threads gemeinsam benutzt wird.
+- Zusätzlich zum gegenseitigen Auschluss müssen Bedingungen für das Parken bzw. Wegfahren eingehalten werden.
+
+package vl;
+
+public class VL_04_09_ParkKontrolleSemaphor01 { // ist kein Monitor mehr!
+    // Zähler für die freien Plätze
+    int N;
+    private int plaetze = N;
+
+    // nur ein Prozess darf auf die Verwaltung zugreifen
+    private VL_04_07_Semaphor semaphor = new VL_04_07_Semaphor(1);
+
+    public void parken() throws InterruptedException {   // nicht synchronized!
+        boolean keinPlatzBekommen = true;
+        while (keinPlatzBekommen) {
+            // kritischen Bereich betreten
+            semaphor.down();
+            if (plaetze <= 0)
+                // kritischen Bereich temporär verlassen...
+                semaphor.up();
+            else keinPlatzBekommen = false;
+        }
+        --plaetze;
+        // kritischen Bereich wieder verlassen
+        semaphor.up();
+    }
+}
+
+Beispiel(3): Parkplatz mit zwei Semaphoren
+- Statt aktiv zu warten, zwei Semaphore verwenden:
+1. freiePlaetze verwaltet die freien Plätze,
+2. belegtePlaetze verwaltet die belegten Plätze.
+
+package vl;
+
+public class VL_04_10_ParkKontrolleSemaphor02 { // ist kein Monitor mehr!
+    private final VL_04_07_Semaphor freiePlaetze;
+    private final VL_04_07_Semaphor belegtePlaetze;
+    private final int N = 1;
+
+    public VL_04_10_ParkKontrolleSemaphor02() {
+        freiePlaetze = new VL_04_07_Semaphor(N);
+        belegtePlaetze = new VL_04_07_Semaphor(0);
+    }
+
+    public void parken() throws InterruptedException {   // nicht mehr synchronized!
+        freiePlaetze.down();
+        belegtePlaetze.up();
+    }
+
+    public void wegfahren() throws InterruptedException {   // nicht mehr synchronized!
+        belegtePlaetze.down();
+        freiePlaetze.up();
+    }
+}
+
+- Implementierung o.k.? Hoffentlich (hat mit ursprünglichen FSP nichts mehr gemeinsam!).
+- Bei Verwendung von Semaphoren ist eine Modellierung ohne Monitor (ohne zentrale/synchronisierte Parkkontrolle)
+  notwendig! Wie muss die Modellierung aussehen?
+
+Parkplatzmodellierung mit Semaphoren in FSP
+- Die Klasse ParkKontrolle wird in FSP nicht mehr als eigener Prozess modelliert,
+  da ihre Methoden nicht mehr synchronized sind und daher unabhängig voneinander aufgerufen werden können,
+- sattdessen werden zwei Semaphore zur Synchronisation verwendet.
+
+// übernehme bekannte Semaphor-Modellierung
+const Max = 5
+range Int = 0..Max
+Semaphor(N=0) = Sema[N],
+Sema[i:Int] = (up -> Sema[i + 1]
+                |when (i > 0) down -> Sema[i - 1]).
+Zufahrt = (freiePlaetze,down -> belegtePlaetze.up -> Zufahrt).
+Ausfahrt = (belegtePlaetze.down -> freiePlaetze.up -> Ausfahrt).
+||Parkplatz = (Zufahrt || Ausfahrt
+                || freiePlaetze:Semaphor(5)
+                || belegtePlaetze:Semaphor(0)).
+Aufgabe: Korrekte Funktionsweise mit LTSA überprüfen!
+Aufgabe: Was passiert, wenn im vorigen Programm ParkKontrolleSemaphor02 die Methoden parken und wegfahren
+trotz des Semaphors als synchronized gezeichnet werden?
+- Hinzufügen von synchronized
+
+Lösungsidee: Modelliere die Funktion und überprüfe die Funktionsweise mit LTSA ("Nested Monitors")!
+const Max = 5
+range Int = 0..Max
+Semaphor(N=0) = Sema[N],
+Sema[i:Int] = (up -> Sema[i + 1]
+                |when (i > 0) down -> Sema[i - 1]).
+
+Zufahrt = (mutex.down -> freiePlaetze.down -> belegtePlaetze.up -> mutex.up -> Zufahrt).
+Ausfahrt = (mutex.down -> belegtePlaetze.down -> freiePlaetze.up -> mutex.up -> Ausfahrt).
+||Parkplatz = (Zufahrt || Ausfahrt
+                || freiePlaetze:Semaphor(5)
+                || belegtePlaetze:Semaphor(0)
+				|| mutex:Semaphor(1)).
+
+Bemerkungen:
+1. Semaphor:
+- Maßnahmen zum gegenseitigen Ausschluss (Atomarität der Aktionen im kritischen Bereich)
+  sind über den Quellcode bzw. das Modell verteilt.
+- Im Modell: Gemeinsame down- und up-Aktionen werden beschrieben
+- In der Implementierung: Der Zugriff erfolgt auf die down- und up-Methoden der Semaphor-Klasse.
+
+2. Monitor:
+- Der gegenseitige Auschluss wird allein im Monitor gelöst, das bedeutet, die Atomarität
+  der Aktionen wird intern vom Monitor sichergestellt.
+- Im Modell: Kritische Bereiche werden durch bewachte Aktionen modelliert.
+- In der Implementierung: Details zur Synchronisation bleiben von außen nicht sichtbar,
+  da der Monitor den Zugriff vollständig kontrolliert.
+
+Beispiel(4): Bounded Buffer mit Semaphoren
+- Idee?
+- Im Gegensatz zur Parkplatzimplementierung mit Semaphoren: Es müssen im Puffer
+  auch Daten gespeichert werden
+- Erfordert Maßnahmen zum gegenseitigen Ausschluss während Speicherzugriff
+
+Bounded Buffer mit Semaphoren: 1. Ansatz
+- Verwende zwei Semaphoren zum Zählen der freien Plätze (dito wie Parkplatz)
+  um einen Monitor zum gegenseitigen Ausschluss für den Speicherzugriff.
+
+package vl;
+
+public class VL_04_11_BoundedBufferSemaphore01<E> {
+    private final E[] speicher;
+    private int vorne = 0, hinten = 0, count = 0;
+    private final int size;
+    private final VL_04_07_Semaphor freie, belegte;
+
+    public VL_04_11_BoundedBufferSemaphore01(int size) {
+        this.size = size;
+        speicher = (E[]) new Object[size];
+        freie = new VL_04_07_Semaphor(size);
+        belegte = new VL_04_07_Semaphor(0);
+    }
+
+    public synchronized void put(E object) throws InterruptedException {
+        freie.down();   // freie.acquire();
+        speicher[vorne] = object;
+        ++count;
+        vorne = (vorne + 1) % size;
+        belegte.up();   // belegte.release();
+    }
+
+    public synchronized E get() throws InterruptedException {
+        belegte.down(); // belegte.acquire;
+        E object = speicher[hinten];
+        --count;
+        hinten = (hinten + 1) % size;
+        freie.up(); // freie.release();
+        return object;
+    }
+}
+
+- Bewertung: Dito wie Aufgabe von Parkplatz, können auch hier "Blockaden" des Monitors auftreten,
+  weil die Semaphore innerhalb des Monitors verwendet werden ("Nested Monitors")!
+- Abhilfe: Keinen Monitor verwenden, sondern Anweisungen zum Zugriff auf den Datenspeicher
+  über separaten synchronized-Block sichern!
+
+public void put(E object) throws InterruptedException{
+    freie.down();   // freie.acquire();
+    synchronized(this){
+        speicher[vorne] = object;
+        ++count;    vorne = (vorne + 1) % size;
+    }
+    belegte.up();   // belegte.release();
+    return object;
+}
+
+Bemerkung
+- Verwendung von Semaphoren ist extrem fehleranfällig, da Programmierer sicherstellen muss,
+  dass up- und down-Operationen immer paarweise und in richter Reihenfolge verwendet werden müssen
+- Um up- und down-Operationen möglichst zentral im Code zu halten, ist Programmierdisziplin
+  erforderlich.
+- Deshalb Semaphore nur verwendenn, wenn keine höheren Synchronisationskonzepte (z.B. Monitore)
+  verfügbar sind.
+- In Java immer Monitore statt Semaphore verwenden.
+
+Zusammenfassung(4)
+- Nebenläufige Prozesse in Java durch Starten von mehreren Threads realisierbar
+- Gegenseitiger Ausschluss durch "Locks" unter Verwendung von synchronized realisierbar
+- Neben Locks und Ausschluss-Wartemenge, Monitore besitzen Ereignis-Wartemenge:
+  Darin warten Threads auf Eintreten von Ereignissen
+- Java-Programme lassen sich durch FSP modellieren, und Modell lässt sich durch Analysetool
+  mögliche Intereferenzen überprüfenn.
+- Semaphore sind "low level" Synchronsationskonzept
+- Monitore sind "high level" Synchronisationskonzept
+- Verwendung von Semaphoren -> extrem fehleranfällig: Es fehlt eine zentrale Stelle
+  zur Synchronisation -> Verwechseln/Vergessen der "verstreuten" up- und down-Operationen
+  leicht möglich
+- wenn Vorhanden, Monitore statt Semaphore verwenden.
+
+5 Eigenschaften paralleler Programme
+- "Deadlocks", was sind das und unter welcher Bedingungen treten sie auf?
+- "Sicherheit", was ist das und wann ist sie gewährleistet?
+- "Lebendigkeit", was ist das und wann wird sie gewährleistet?
+
+5.1 Verklemmungen
+- Definition: Verklemmung/Deadlock, wenn in einem nebenläufigen System alle Prozesse des Systems
+  blockiert sind, d.h. keine Aktion mehr ausgeführt werden kann
+
+Beispiel: Deadlock
+- Zwei nebenläufige Prozesse P und Q wollen zeitgleich einen Scanner und einen Drucker benutzen:
+- P fordert erst Drucker, dann Scanner an
+  P = (printer.get -> scanner.get -> useP -> printer.put -> scanner.put -> P).
+- Q fordert erst Scanner, dann Drucker an
+  Q = (scanner.get -> printer.get -> useQ -> scanner.put -> printer.put -> Q).
+
+Modellierung des Gesamtsystems
+P = (printer.get -> scanner.get -> useP -> printer.put -> scanner.put -> P).
+Q = (scanner.get -> printer.get -> useQ -> scanner.put -> printer.put -> Q).
+Resource = (get -> put -> Resource).
+||System = (p:P || q:Q ||
+            {p, q}::printer:Resource ||
+            {p, q}::scanner:Resource ).
+
+Zustandsdiagramm des Gesamtsystems
+- Frage: Was fällt auf? Was passiert im Zustand "%"?
+
+Analyse des Systems
+- Wie potenzielle Deadlocks finden?
+- Von LTSA suchen lassen!
+
+Deadlock-Bedingungen
+- Vier notwendige und hinreichende Bedingungen für das Auftreten von Deadlocks:
+1. Exklusive Benutzung von Ressourcen (gegenseitiger Ausschluss).
+2. Inkrementelle Anforderung von Ressourcen (Belegen von Ressourcen während auf weitere Ressourcen
+   gewartet wird).
+3. Nichtunterbrechbarkeit (keine temporäre Rückgabe von Ressourcen).
+4. Zyklische Abhängigkeit (ein Prozess hält Ressourcen, auf die ein anderer Prozess wartet).
+
+Strategien zum Ungang mit Deadlocks
+1. Erkennen und Beseitigen: Einen Prozess terminieren, der in einem Deadlocks verwickelt ist
+   und der von ihm belegten Ressourcen freigeben
+2. Vermeiden: Sicherstellen, dass (mindestens) eine vn vier notwendigen Deadlock-Bedingungen
+   nie erfüllt sein wird.
+
+Beispiel: Vermeiden von Deadlocks
+
+1. Feste Sperr-Reihenfolge, Ordnen der Ressourcenanforderungen (Deadlock-Bedingung 4):
+P = (printer.get -> scanner.get -> useP -> printer.put -> scanner.put -> P).
+Q = (printer.get -> scanner.get ->  useQ -> scanner.put -> printer.put -> Q).
+
+2. Rückgabe von Ressourcen, "Backoff-Strategie" (Deadlock-Bedingung 3):
+P = (printer.get -> GetScanner),
+GetScanner = (scanner.get -> useP -> printer.put -> scanner.put -> P
+             | timeoutP -> printer.put -> P).
+Q = (scanner.get -> GetPrinter),
+GetPrinter = (printer.get -> useQ ->
+              scanner.put -> printer.put -> Q
+              | timeoutQ -> scanner.put -> Q).
+
+Beispiel: "Dinierende Philosophen"
+- Modellierung in FSP: Was soll als Prozess modelliert werden?
+GABEL = (aufnehmen -> ablegen -> GABEL).
+PHIL = (setzen -> rechts.aufnehmen -> links.aufnehmen -> essen -> links.ablegen -> rechts.ablegen -> aufstehen -> PHIL).
+||DINNER(N=5) = forall [i:0..N-1]
+    (phil[i]:PHIL ||
+     {phil[i].links, phil[((i-1)+N].rechts}::GABEL).
+
+- Implementierung in Java: Was wird als Thread und was als Monitor implementiert?
+- jeden Philosophen als eigenen Thread implementieren,
+- jede Gabel als Monitor implementieren,
+- die Modellierung der Gabel vorher noch überarbeiten,
+  damit die Umsetzungsregeln für Monitore anwendbar sind.
+
+Modifizierte Gabel
+- Originalmodellierung:
+GABEL = (aufnehmen -> ablegen -> GABEL).
+- Monitortaugliche Modellierung:
+GABEL = GABEL[0],
+GABEL[b:0..1] = (when (!b) aufnehmen -> GABEL[1]
+                |when (b) ablegen -> GABEL[0]).
+- Sind die Modellierungen wirklich gleichwertig?
+
+package vl;
+
+public class VL_05_01_Gabel {
+    protected boolean istBelegt;
+    protected final int nummer;
+
+    public VL_05_01_Gabel(int number) {
+        this.nummer = number;
+    }
+
+    // ... Konstruktor
+    public synchronized void aufnehmen() throws InterruptedException {
+        while (!istBelegt) wait();
+        istBelegt = true;
+        notifyAll();    // weglassen?
+    }
+
+    public synchronized void ablegen() throws InterruptedException {
+        while (!istBelegt) wait();   // weglassen?
+        istBelegt = false;
+        notifyAll();
+    }
+
+    public int getNumber() {
+        return nummer;
+    }
+}
+
+package vl;
+
+public class VL_05_01_Gabel {
+    protected boolean istBelegt;
+    protected final int nummer;
+
+    public VL_05_01_Gabel(int number) {
+        this.nummer = number;
+    }
+
+    // ... Konstruktor
+    public synchronized void aufnehmen() throws InterruptedException {
+        while (!istBelegt) wait();
+        istBelegt = true;
+        notifyAll();    // weglassen?
+    }
+
+    public synchronized void ablegen() throws InterruptedException {
+        while (!istBelegt) wait();   // weglassen?
+        istBelegt = false;
+        notifyAll();
+    }
+
+    public int getNumber() {
+        return nummer;
+    }
+}
+
+- Bemerkung: Da diese Java-Implementierung von einem Deadlock-behafteten Modell abgeleitet ist,
+  besteht auch hier die Möglichkeit eines Deadlocks!
+- Lassen sich in der Praxis Deadlocks beobachten?
+- Frage: Durch welche Maßnahmen kann ein Deadlock ausgeschlossen werden?
+
+"Dinierende Philosophen": Deadlock-Vermeidung
+- Beispiele zur Deadlock-Vermeidung (Ausschließen einer notwendigen Deadlock-Bedingung):
+1. Gabeln nummerieren und immer die mit der kleineren Nummer zuerst anfordern
+2. Philosophen nummerieren: "gerade" Philosophen nehmen linke Gabel zuerst,
+   "ungerade" die rechte
+3. nach "Timeout" die belegte Gabel zurückgeben
+4. ein "Butler" führt maximal vier Philosophen gleichzeitig an den Tisch
+
+Deadlock-freie Modellierung in FSP (Variante 2):
+GABEL = (aufnehmen -> ablegen -> GABEL).
+PHIL(I=0) = (
+    when (I%2==0) setzen
+        -> links.aufnehmen -> rechts.aufnehmen
+        -> essen -> links.ablegen -> rechts.ablegen
+        -> aufstehen -> PHIL
+    |when (I%2==1) setzen
+        -> rechts.aufnehmen -> links.aufnehmen
+        -> essen -> links.ablegen -> rechts.ableegn
+        -> aufstehen -> PHIL).
+||DINNER(N=5) = forall[i:0..N-1]
+    (phil[i]:PHIL(i)    ||
+     {phil[i].links, phil[((i-1)+N)%N].rechts}::GABEL).
+
+Aufgabe
+1. Implementieren Sie die "Dinierenden Philosophen" in Java. Wählen Sie zuerst einen naiven Ansatz,
+in dem Verklemmungen auftreten können und zeigen Sie diese bei der Programmausführung.
+2. Erweitern Sie Ihr Programm in drei Varianten, so dass jeder Variante jeweils eine andere
+der hinreichenden und notwendigen Deadlock-Bedingungen 2-4 ausgeschaltet wird.
+
+package vl;
+
+public class VL_05_01_Gabel {
+    protected boolean istBelegt;
+    protected final int nummer;
+
+    public VL_05_01_Gabel(int number) {
+        this.nummer = number;
+    }
+
+    // ... Konstruktor
+    public synchronized void aufnehmen() throws InterruptedException {
+        while (istBelegt) wait();
+        istBelegt = true;
+        notifyAll();    // weglassen?
+    }
+
+    public synchronized void ablegen() throws InterruptedException {
+        while (!istBelegt) wait();   // weglassen?
+        istBelegt = false;
+        notifyAll();
+    }
+
+    public int getNumber() {
+        return nummer;
+    }
+}
+
+package vl;
+
+public class VL_05_02_Philosoph extends Thread {
+    final VL_05_01_Gabel linkeGabel;
+    final VL_05_01_Gabel rechteGabel;
+    protected final int nummer;
+
+    public VL_05_02_Philosoph(int nummer, VL_05_01_Gabel linkeGabel, VL_05_01_Gabel rechteGabel) {
+        this.nummer = nummer;
+        this.linkeGabel = linkeGabel;
+        this.rechteGabel = rechteGabel;
+    }
+
+    void denken() throws InterruptedException {
+        System.out.println("Philosoph " + getName() + " mit Nummer: " + nummer + " denkt.");
+        sleep((int) (Math.random() * 1000));
+    }
+
+    void essen() throws InterruptedException {
+        System.out.println("Philosoph " + getName() + " mit Nummer: " + nummer + "isst.");
+        sleep((int) (Math.random() * 1000));
+    }
+
+    private void sleep(int time) throws InterruptedException {
+        Thread.sleep(time);
+    }
+
+    public void aktionAusfuehren() {
+        try {
+            while (true) {
+                essen();
+                denken();
+            }
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
+
+    @Override
+    public void run() {
+        try {
+            while (true) {
+                denken();
+                synchronized (linkeGabel) {
+                    linkeGabel.aufnehmen();
+                    synchronized (rechteGabel) {
+                        rechteGabel.aufnehmen();
+                        essen();
+                        rechteGabel.ablegen();
+                    }
+                    linkeGabel.ablegen();
+                }
+            }
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+}
+
+package vl;
+
+import java.util.concurrent.Semaphore;
+
+public class VL_05_03_Dinner {
+
+    public static void starteMitButlerStrategie() {
+        int anzahlPhilosophen = 5;
+        VL_05_01_Gabel[] gabeln = new VL_05_01_Gabel[anzahlPhilosophen];
+        VL_05_02_Philosoph[] philosophen = new VL_05_02_Philosoph[anzahlPhilosophen];
+        Semaphore butler = new Semaphore(anzahlPhilosophen - 1);
+
+        // Initialisierung der Gabeln
+        for (int i = 0; i < anzahlPhilosophen; ++i)
+            gabeln[i] = new VL_05_01_Gabel(i);
+
+        // Initialisierung der Philosophen mit Butler-Strategie
+        for (int i = 0; i < anzahlPhilosophen; ++i) {
+            philosophen[i] = new VL_05_02_Philosoph(i, gabeln[i], gabeln[(i + 1) % anzahlPhilosophen]) {
+                @Override
+                public void run() {
+                    try {
+                        while (true) {
+                            denken();
+                            butler.acquire();
+                            synchronized (linkeGabel) {
+                                linkeGabel.aufnehmen();
+                                synchronized (rechteGabel) {
+                                    rechteGabel.aufnehmen();
+                                    essen();
+                                    rechteGabel.ablegen();
+                                }
+                                linkeGabel.ablegen();
+                            }
+                            butler.release();
+                        }
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            };
+        }
+
+        // Start der Philosophen-Threads
+        for (int i = 0; i < philosophen.length; ++i)
+            philosophen[i].start();
+    }
+
+    public static void starteMitParitaetReihenfolge() {
+        int anzahlPhilosophen = 5;
+        VL_05_01_Gabel[] gabeln = new VL_05_01_Gabel[anzahlPhilosophen];
+        VL_05_02_Philosoph[] philosophen = new VL_05_02_Philosoph[anzahlPhilosophen];
+
+        // Initialisierung der Gabeln
+        for (int i = 0; i < anzahlPhilosophen; ++i)
+            gabeln[i] = new VL_05_01_Gabel(i);
+
+        // Initialisierung der Philosophen mit Paritätsreihenfolge
+        for (int i = 0; i < anzahlPhilosophen; ++i) {
+            VL_05_01_Gabel linkeGabel = gabeln[i];
+            VL_05_01_Gabel rechteGabel = gabeln[(i + 1) % anzahlPhilosophen];
+
+            if (i % 2 == 0)
+                philosophen[i] = new VL_05_02_Philosoph(i, linkeGabel, rechteGabel);
+            else
+                philosophen[i] = new VL_05_02_Philosoph(i, rechteGabel, linkeGabel);
+        }
+
+        for (int i = 0; i < philosophen.length; ++i)
+            philosophen[i].start();
+    }
+
+    public static void starteMitFesterReihenfolge() {
+        int anzahlPhilosophen = 5;
+        VL_05_01_Gabel[] gabeln = new VL_05_01_Gabel[anzahlPhilosophen];
+        VL_05_02_Philosoph[] philosophen = new VL_05_02_Philosoph[anzahlPhilosophen];
+
+        // Initialisierung der Gabeln
+        for (int i = 0; i < anzahlPhilosophen; ++i)
+            gabeln[i] = new VL_05_01_Gabel(i);
+
+        // Initialisierung der Philosophen mit fester Reihenfolge der Gabelaufnahme
+        for (int i = 0; i < anzahlPhilosophen; ++i) {
+            VL_05_01_Gabel linkeGabel = gabeln[i];
+            VL_05_01_Gabel rechteGabel = gabeln[(i + 1) % anzahlPhilosophen];
+            if (linkeGabel.getNumber() < rechteGabel.getNumber())
+                philosophen[i] = new VL_05_02_Philosoph(i, linkeGabel, rechteGabel);
+            else
+                philosophen[i] = new VL_05_02_Philosoph(i, rechteGabel, linkeGabel);
+        }
+
+        // Start der Philosophen-Threads
+        for (int i = 0; i < philosophen.length; ++i)
+            philosophen[i].start();
+    }
+
+    public static void main(String... args) {
+        //starteMitFesterReihenfolge();
+        //starteMitParitaetReihenfolge();
+        starteMitButlerStrategie();
+    }
+}
+
+5.2 Sicherheit und Lebendigkeit
+- Für parallele Programme werden zwei wesentliche Eigenschaften gefordert:
+- Sicherheit: "Nichts Schlimmes wird passieren!"
+- Lebendigkeit: "Etwas Gutes wird (irgendwann) passieren!"
+
+Sicherheit
+- Sicherheitseigenschaft sequentieller Programme:
+- partielle Korrektheit: "Wenn das Programm terminiert, dann ist das Ergebnis korrekt!"
+- totale Korrektheit: "Das Programm terminiert immer und partielle Korrektheit ist sichergestellt!"
+
+- Schon bekannte Sicherheitseigenschaften nebenläufiger Programme:
+- Abwesenheit von Intereferenzen (Race Hazarads),
+- Abwesenheit von Verklemmungen (Deadlocks)
+
+- Frage: Wie Sicherheitseigenschaften nachweisen?
+- Antwort: Durch formalen Nachweis! Model Checker (z.B. LTSA) verwenden
+  und nicht gewünschte Zustände automatisch suchen lassen.
+
+
+
+
+
+
+
+
