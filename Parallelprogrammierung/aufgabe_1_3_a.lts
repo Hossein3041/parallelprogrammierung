@@ -1,0 +1,20 @@
+const M = 3		// Maximale Passagieranzahl pro Wagen
+const T = 3		// Anzahl der Wagen
+const START_POS = T-1	// Startposition des vorderen Wagens
+range P = 0..M		// Gibt Bereich der Passagierzahlen pro Wagen an
+range Pos = 0..START_POS	// Definiert die möglichen Positionen der Wagen
+range ID = 1..T		// Bezeichnet die Wagen-IDs
+Steuerung = Steuerung[0][2][0][1][0][0],	// Wagen 1 leer auf Position 2; Wagen 2 leer auf Position 1, Wagen 3 leer auf Position 0
+Steuerung[p1:P][w1:Pos][p2:P][w2:Pos][p3:P][w3:Pos] = (	// p1, p2, p3: Passagieranzahl in den Wagen 1, 2 und 3; w1, w2, w3: Positionen der Wagen 1, 2 und 3
+	 when(p1 < M) passagier -> Steuerung[p1+1][w1][p2][w2][p3][w3]
+	|when(p2 < M) passagier -> Steuerung[p1][w1][p2+1][w2][p3][w3]
+	|when(p3 < M) passagier -> Steuerung[p1][w1][p2][w2][p3+1][w3]	// Passagier steigen ein, wenn ein Wagen noch nicht voll ist. Die Passagieranzahl im entsprechenden Wagen wird erhöht
+	|when(w1 == START_POS && p1 == M) wagen[1].abfahrt -> Steuerung[p1][w1][p2][w2][p3][w3]
+	|when(w2 == START_POS && p2 == M) wagen[2].abfahrt -> Steuerung[p1][w1][p2][w2][p3][w3]
+	|when(w3 == START_POS && p3 == M) wagen[3].abfahrt -> Steuerung[p1][w1][p2][w2][p3][w3]	// Ein Wagen darf nur abfahren, wenn er voll und an vorderster Position ist
+	|when(w1 == START_POS && p1 == M) wagen[1].aussteigen -> Steuerung[0][(w1+1)%T][p2][(w2+1)%T][p3][(w3+1)%T]
+	|when(w2 == START_POS && p2 == M) wagen[2].aussteigen -> Steuerung[p1][(w1+1)%T][0][(w2+1)%T][p3][(w3+1)%T]
+	|when(w3 == START_POS && p3 == M) wagen[3].aussteigen -> Steuerung[p1][(w1+1)%T][p2][(w2+1)%T][0][(w3+1)%T]).	// Wenn ein Wagen an vorderster Position war, und voll war, steigen die Passagiere aus. Der Wagen wird in die hiterste Position rotiert. Der erste Wagen, der aussteigt, wird leer.
+Drehkreuz = (passagier -> Drehkreuz).
+Wagen = (abfahrt -> unterwegs -> aussteigen -> Wagen).
+||Achterbahn = (Drehkreuz || Steuerung || forall[i:ID] wagen[i]:Wagen).

@@ -1,0 +1,14 @@
+const PRICE = 60
+const MAX_SUM = PRICE + 50
+range N = 0..MAX_SUM
+GETRAENKEAUTOMAT = AUTOMAT[0],
+AUTOMAT[s:N] = (
+    when (s < PRICE && s + 10 <= MAX_SUM) einwurf10 -> AUTOMAT[s + 10]
+    |when (s < PRICE && s + 20 <= MAX_SUM) einwurf20 -> AUTOMAT[s + 20]
+    |when (s < PRICE && s + 50 <= MAX_SUM) einwurf50 -> AUTOMAT[s + 50]
+    |when (s >= PRICE) ausgabe -> WECHSELGELD[s]
+),
+WECHSELGELD[s:N] = (
+    when (s > PRICE) wechselgeld[s - PRICE] -> AUTOMAT[0]
+    |when (s == PRICE) keinWechselgeld -> AUTOMAT[0]
+).

@@ -1,0 +1,50 @@
+SPERRMECHANISMUS = 
+    (platz1_sperren -> platz1_entsperren -> SPERRMECHANISMUS
+    | platz2_sperren -> platz2_entsperren -> SPERRMECHANISMUS).
+
+PLATZ1 = 
+    (platz1_anzeigen -> PLATZ1
+    | platz1_frei -> platz1_sperren -> platz1_reservieren -> platz1_entsperren -> PLATZ1).
+
+PLATZ2 = 
+    (platz2_anzeigen -> PLATZ2
+    | platz2_frei -> platz2_sperren -> platz2_reservieren -> platz2_entsperren -> PLATZ2).
+
+TERMINAL1 = 
+    (anfrage_terminal1 -> 
+        (verfuegbar_terminal1 -> reservieren_terminal1 -> ticket_drucken1 -> terminal1_zurueck -> TERMINAL1
+        | belegt_terminal1 -> terminal1_zurueck -> TERMINAL1)).
+
+TERMINAL2 = 
+    (anfrage_terminal2 -> 
+        (verfuegbar_terminal2 -> reservieren_terminal2 -> ticket_drucken2 -> terminal2_zurueck -> TERMINAL2
+        | belegt_terminal2 -> terminal2_zurueck -> TERMINAL2)).
+
+Z_RECHNER = 
+    (startRechnerAktion -> 
+        (anfrage_terminal1 -> PLATZ1_BEARBEITEN
+        | anfrage_terminal2 -> PLATZ2_BEARBEITEN)).
+
+PLATZ1_BEARBEITEN = 
+    (verfuegbar_terminal1 -> platz1_sperren -> reservieren_terminal1 -> platz1_entsperren -> Z_RECHNER
+    | belegt_terminal1 -> Z_RECHNER).
+
+PLATZ2_BEARBEITEN = 
+    (verfuegbar_terminal2 -> platz2_sperren -> reservieren_terminal2 -> platz2_entsperren -> Z_RECHNER
+    | belegt_terminal2 -> Z_RECHNER).
+
+||THEATER = (TERMINAL1 
+             || TERMINAL2 
+             || PLATZ1 
+             || PLATZ2 
+             || SPERRMECHANISMUS 
+             || Z_RECHNER)
+             {platz1_perTerminal1_anfragen/anfrage_terminal1, 
+              platz1_verfuegbar/verfuegbar_terminal1, 
+              platz1_belegt/belegt_terminal1, 
+              platz1_perTerminal1_reservieren/reservieren_terminal1, 
+              platz2_perTerminal2_anfragen/anfrage_terminal2, 
+              platz2_verfuegbar/verfuegbar_terminal2, 
+              platz2_belegt/belegt_terminal2, 
+              platz2_perTerminal2_reservieren/reservieren_terminal2}.
+

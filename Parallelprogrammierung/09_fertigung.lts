@@ -1,0 +1,9 @@
+range Produktion = 0..1
+range Montage = 0..1
+Fertigung = Fertigung[0][0][0],
+Fertigung[prod1:Produktion][prod2:Produktion][montageStatus:Montage] = (
+	 when(prod1 == 0) produziere1 -> Fertigung[1][prod2][montageStatus]
+	|when(prod2 == 0) produziere2 -> Fertigung[prod1][1][montageStatus]
+	|when(montageStatus == 0 && prod1 == 1 && prod2 == 1) fertig -> montage -> Fertigung[prod1][prod2][1]
+	|when(montageStatus == 1 && prod1 == 1 && prod2 == 1) montiert -> Fertigung[0][0][0]
+).
