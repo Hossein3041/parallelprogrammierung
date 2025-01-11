@@ -1,9 +1,0 @@
-/* Parkplatz */
-ParkKontrolle(N=3) = FreiePlaetze[N],
-FreiePlaetze[i:0..N] = (when (i > 0) parken ->
-FreiePlaetze[i-1]
-| when (i < N) wegfahren ->
-FreiePlaetze[i+1]).
-Zufahrt = (parken -> Zufahrt).
-Ausfahrt = (wegfahren -> Ausfahrt).
-||Parkplatz = (Zufahrt || Ausfahrt || ParkKontrolle(4)).

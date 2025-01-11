@@ -1,4 +1,0 @@
-Client = (call.request -> call.reply -> continue -> Client).
-Server = (accept.request -> service -> accept.reply -> Server).
-||ClientServer(N=4) = (a[i:1..N]:Client || Server)
-/ {call.request/accept.request, call.reply/accept.reply}.

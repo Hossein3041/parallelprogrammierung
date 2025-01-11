@@ -1,9 +1,0 @@
-PERSON = WEEK,
-WEEK = (weekday -> WEEKDAY|weekend -> WEEKEND),
-WEEKDAY = (sleep -> work -> PERSON),
-WEEKEND = (sleep -> (play -> PERSON|shop -> PERSON)).
-// * weekday -> sleep -> work -> weekday -> sleep -> work
-// * weekday -> sleep -> work -> weekend -> sleep -> play
-// * weekend -> sleep -> shop -> weekday -> sleep -> work
-// * weekend -> sleep -> play -> weekend -> sleep -> shop
-// * weekday -> sleep -> work -> weekend -> sleep -> play -> weekday -> sleep -> work

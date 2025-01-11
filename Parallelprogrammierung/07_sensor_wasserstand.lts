@@ -1,8 +1,0 @@
-range P = 0..9
-SENSOR = SENSOR[5],
-SENSOR[i:P] = (
-    when (i >= 0 && i <= 2) niedrig -> SENSOR[i]
-    |when (i >= 8 && i <= 9) hoch -> SENSOR[i]
-    |when (i >= 3 && i <= 7) normal -> SENSOR[i]
-    |pegel[j:P] -> SENSOR[j]
-).

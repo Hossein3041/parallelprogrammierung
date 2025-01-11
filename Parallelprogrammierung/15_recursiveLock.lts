@@ -1,9 +1,0 @@
-const N = 3
-range C = 0..N  // Wertebereich des Lock-Zählers
-range P = 1..2  // Threads
-
-// Rekursive Locks als Prozess
-RecursiveLock = RL[0],  // Initialzustand: kein Lock
-RL[n:C] = (when (n < N) acquire[p:P] -> RL[n+1]  // Lock erhöhen
-           | when (n > 0) release[p:P] -> RL[n-1] // Lock verringern
-           | when (n == 0) idle -> RL[n]).       // Ruhezustand, falls Lock-Zähler = 0
